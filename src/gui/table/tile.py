@@ -5,12 +5,11 @@ from PySide2.QtGui import QPainter
 class Tile(QWidget):
     def __init__(self, color):
         super(Tile, self).__init__()
-        self.setStyleSheet("background: " + color)
+        self.setStyleSheet("background: " + color + ";")
 
-
-        policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        policy.setHeightForWidth(True)
-        self.setSizePolicy(policy)
+        # policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # policy.setHeightForWidth(True)
+        # self.setSizePolicy(policy)
 
     def heightForWidth(self, arg__1):
         return self.width()

@@ -8,6 +8,7 @@ class TableGrid(QGridLayout):
         self.setSpacing(0)
         self.table = [[0]*8]*8
         self.generate_tiles()
+        self.setMargin(10)
 
     def generate_tiles(self):
         for i in range(8):
@@ -18,3 +19,4 @@ class TableGrid(QGridLayout):
                     color = "#333"
                 self.table[i][j] = Tile(color)
                 self.addWidget(self.table[i][j], i, j)
+
