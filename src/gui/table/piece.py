@@ -4,24 +4,25 @@ from PySide2.QtCore import QPoint
 
 
 class Piece(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, piece_type, row, col):
         super(Piece, self).__init__(parent)
         self.move(0, 0)
         # self.resize(50, 50)
         self.setStyleSheet("background: " + "red; border-radius: 50px")
         self.offset = QPoint()
         self.crs = QCursor()
-        self.col = 5
-        self.row = 6
+        self.piece_type = piece_type
+        self.col = col
+        self.row = row
 
-    def update_size(self, w, h, grid):
-        print(grid[0][0].width())
+    def update_size(self, w, h):
+        # print(grid[0][0].width())
         if w > h:
             width = h - 20
         else:
             width = w-20
 
-        tile_size = grid[self.col][self.row].width()
+        # tile_size = grid[self.col][self.row].width()
         self.move(width / 8 * self.col + 10, width / 8 * self.row + 10)
         self.resize(width/8, width/8)
         self.setStyleSheet("background: " + "red; border-radius: " + str(int(width/16)) +"px")

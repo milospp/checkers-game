@@ -13,7 +13,6 @@ def main_gui():
     main_app.main_window.show()
     #main_app.setStyle('fusion')
     #main_app.controller = MainController(main_app)
-    game = GameLoop()
-    game.start()
+
 
     sys.exit(main_app.exec_())

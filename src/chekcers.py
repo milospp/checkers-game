@@ -11,7 +11,7 @@ def minimax(node, depth_ab, alpha, beta, maximizing):
 
     if maximizing:
         max_value = -999
-        generate(node, 2)
+        generate(node, 2, depth_ab)
         if not node.children:
             node.value = -900
             return Node(-900)
@@ -26,7 +26,7 @@ def minimax(node, depth_ab, alpha, beta, maximizing):
         return max_value
     else:
         min_value = 999
-        generate(node, 1)
+        generate(node, 1, depth_ab)
         if not node.children:
             node.value = 900
             return Node(900)
@@ -122,7 +122,7 @@ class Stack:
 
 
 class Board(object):
-    def __init__(self, new_matrix=None, lastjump=""):
+    def __init__(self, new_matrix=None, last_jmp=None, signal=None):
         if not new_matrix:
             self.matrix = [[0, 2, 0, 2, 0, 2, 0, 2],
                            [2, 0, 2, 0, 2, 0, 2, 0],
@@ -132,6 +132,16 @@ class Board(object):
                            [1, 0, 1, 0, 1, 0, 1, 0],
                            [0, 1, 0, 1, 0, 1, 0, 1],
                            [1, 0, 1, 0, 1, 0, 1, 0]]
+
+
+            # self.matrix = [[5, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [1, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 1, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 1, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 1, 0, 0, 0, 0]]
 
             # self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
             #                [0, 0, 0, 0, 0, 0, 0, 0],
@@ -144,7 +154,11 @@ class Board(object):
 
         else:
             self.matrix = new_matrix
-        self.lastjump = lastjump
+        if last_jmp:
+            self.lastjump = last_jmp
+        else:
+            self.lastjump = []
+        self.signal = signal
 
     def get_matrix(self):
         return self.matrix
@@ -264,7 +278,7 @@ class Board(object):
                     # moves.extend(self.eatable(param, i + 2, j + 2))
         return moves
 
-    def move(self, old, new, param=1):
+    def move(self, old, new, param=1, first_layer_depth=True):
         cell = self.matrix[old[0]][old[1]]
         self.matrix[old[0]][old[1]] = 3
         if (new[0] == 7 or new[0] == 0) and cell < 3:
@@ -272,9 +286,15 @@ class Board(object):
         else:
             self.matrix[new[0]][new[1]] = cell
         if abs(old[0] - new[0]) == 2:
-            self.lastjump += str(chr(old[0] + 65)) + str(old[1] + 1) + " --> " + str(chr(new[0] + 65)) + str(
-                new[1] + 1) + " (" + str(chr(int((old[0] + new[0]) / 2) + 65)) + str(
-                int((old[1] + new[1]) / 2) + 1) + ")" + "\n"
+            # self.lastjump += str(chr(old[0] + 65)) + str(old[1] + 1) + " --> " + str(chr(new[0] + 65)) + str(
+            #     new[1] + 1) + " (" + str(chr(int((old[0] + new[0]) / 2) + 65)) + str(
+            #     int((old[1] + new[1]) / 2) + 1) + ")" + "\n"
+
+            # A2 -> C4 (B3) is [01, 23, 12]
+            # A == 0; B == 1...
+            if first_layer_depth:
+                self.lastjump.append(old[0] * 1000 + old[1] * 100 + new[0] * 10 + new[1])
+
             self.matrix[int((old[0] + new[0]) / 2)][int((old[1] + new[1]) / 2)] = 6
             eatable_cells = self.eatable(param, new[0], new[1])
             if len(eatable_cells) > 1:
@@ -285,8 +305,11 @@ class Board(object):
                     # print("Ima jos da se jede PC")
                     return 3
             return 4  # Pojeo
-        self.lastjump += str(chr(old[0] + 65)) + str(old[1] + 1) + " --> " + str(chr(new[0] + 65)) + str(
-            new[1] + 1) + "\n"
+        # self.lastjump += str(chr(old[0] + 65)) + str(old[1] + 1) + " --> " + str(chr(new[0] + 65)) + str(
+        #     new[1] + 1) + "\n"
+        if first_layer_depth:
+            self.lastjump.append(old[0] * 1000 + old[1]*100 + new[0] * 10 + new[1])
+
         return 1  # Samo MOVE
 
     def pc_move(self, stack):
@@ -301,7 +324,7 @@ class Board(object):
             return 0
 
         self.matrix = copy.deepcopy(max(root.children).board.matrix)
-        self.lastjump = max(root.children).board.lastjump
+        self.lastjump = copy.deepcopy(max(root.children).board.lastjump)
         return 1
 
     def print(self, highlighted=0, moves=[]):
@@ -353,8 +376,16 @@ class Board(object):
                 if self.matrix[enum_i][enum_j] == 3 or self.matrix[enum_i][enum_j] == 6:
                     self.matrix[enum_i][enum_j] = 0
             print("\n  |" + "－－－|" * 8)
-        if highlighted != 5:
-            print(self.lastjump)
+        # if highlighted != 5:
+            # print(self.lastjump)
+            # last_jump_to_str(self.lastjump)
+
+    def send_signal(self):
+        if not self.signal:
+            return None
+        print("OVO TREBA: ", self.possible_moves(1))
+        self.signal.sig.emit(self.lastjump, self.matrix, self.possible_moves(1))
+        self.possible_moves(1)
 
     def play_game(self):
         global status, turn, depth
@@ -375,7 +406,8 @@ class Board(object):
                 print("Povećana dubina  na", depth)
             turn += 1
             self.print(1)
-            self.lastjump = ""
+            self.send_signal()
+            self.lastjump[:] = []
             if turn > 80:
                 count = self.count_figures()
                 if count > 0:
@@ -398,7 +430,7 @@ class Board(object):
             turn += 1
             self.print()
             print("==PC==")
-            self.lastjump = ""
+            self.lastjump[:] = []
             while True:
                 play = self.pc_move(stack)
                 if play == 1:
@@ -452,24 +484,30 @@ class Board(object):
         return 1
 
 
-def generate(node, param):
+def generate(node, param, depth_ab):
     table = node.board
     for move in table.possible_moves(param):
-        next_hop_add(node, table, move, param)
+        next_hop_add(node, table, move, param, depth_ab)
 
 
-def next_hop_add(node, table, move, param):
+def next_hop_add(node, table, move, param, depth_ab):
+
+    first_layer_depth = True if depth_ab == depth else False
+    # first_layer_depth = True
+
     temp_new_table = Board(copy.deepcopy(table.matrix))
-    temp_new_table.lastjump = table.lastjump
-    if temp_new_table.move(move[0], move[1], param) > 1:
+    # temp_new_table.lastjump = table.lastjump
+    if temp_new_table.move(move[0], move[1], param, first_layer_depth=first_layer_depth) > 1:
         next_hop = temp_new_table.eatable(param, move[1][0], move[1][1])
         if len(next_hop) > 1:
             for n_move in next_hop[1:]:
-                next_hop_add(node, temp_new_table, n_move, param)
+                next_hop_add(node, temp_new_table, n_move, param, depth_ab)
 
+    # new_table = Board([1,23])
     new_table = Board(copy.deepcopy(table.matrix))
-    new_table.lastjump = table.lastjump
-    new_table.move(move[0], move[1], param)
+    if first_layer_depth:
+        new_table.lastjump = copy.deepcopy(table.lastjump)
+    new_table.move(move[0], move[1], param, first_layer_depth=first_layer_depth)
     node.add_child(Node(None, new_table))
     return
 
@@ -541,9 +579,25 @@ v3 = "░"
 v4 = "□"
 v5 = "⬛"
 v6 = "－"
+force_jump = False
+pc_first = False
 status = "NOVA IGRA"
 depth = 5
 turn = 0
+
+
+def last_jump_to_str(last_jump):
+    for lj in last_jump:
+        b2 = lj%10
+        lj = int(lj/10)
+        b1= lj%10
+        lj = int(lj/10)
+        a2 = lj%10
+        lj = int(lj/10)
+        a1 = lj%10
+        lj = int(lj/10)
+
+        print(a1,a2,b1,b2)
 
 if __name__ == '__main__':
 
