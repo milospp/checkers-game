@@ -6,7 +6,7 @@ class TableGrid(QGridLayout):
     def __init__(self):
         super(TableGrid, self).__init__()
         self.setSpacing(0)
-        self.table = [[0]*8]*8
+        self.table = [[0]*8,[0]*8,[0]*8,[0]*8,[0]*8,[0]*8,[0]*8,[0]*8]
         self.generate_tiles()
         self.setMargin(10)
 

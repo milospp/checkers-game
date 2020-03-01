@@ -122,11 +122,11 @@ class Stack:
 
 
 class Board(object):
-    def __init__(self, new_matrix=None, last_jmp=None, signal=None):
+    def __init__(self, new_matrix=None, last_jmp=None, pc_signal=None, player_signal=None):
         if not new_matrix:
             self.matrix = [[0, 2, 0, 2, 0, 2, 0, 2],
                            [2, 0, 2, 0, 2, 0, 2, 0],
-                           [0, 2, 0, 2, 0, 2, 0, 2],
+                           [0, 4, 0, 2, 0, 2, 0, 2],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [1, 0, 1, 0, 1, 0, 1, 0],
@@ -134,14 +134,14 @@ class Board(object):
                            [1, 0, 1, 0, 1, 0, 1, 0]]
 
 
-            # self.matrix = [[5, 0, 0, 0, 0, 0, 0, 0],
+            # self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
             #                [0, 0, 0, 0, 0, 0, 0, 0],
-            #                [1, 0, 0, 0, 0, 0, 0, 0],
-            #                [0, 1, 0, 0, 0, 0, 0, 0],
             #                [0, 0, 0, 0, 0, 0, 0, 0],
-            #                [0, 1, 0, 0, 0, 0, 0, 0],
             #                [0, 0, 0, 0, 0, 0, 0, 0],
-            #                [0, 0, 0, 1, 0, 0, 0, 0]]
+            #                [0, 0, 0, 5, 0, 0, 0, 0],
+            #                [0, 0, 1, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0]]
 
             # self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
             #                [0, 0, 0, 0, 0, 0, 0, 0],
@@ -158,7 +158,9 @@ class Board(object):
             self.lastjump = last_jmp
         else:
             self.lastjump = []
-        self.signal = signal
+        self.signal = pc_signal
+        self.player_signal = player_signal
+
 
     def get_matrix(self):
         return self.matrix
@@ -327,7 +329,13 @@ class Board(object):
         self.lastjump = copy.deepcopy(max(root.children).board.lastjump)
         return 1
 
-    def print(self, highlighted=0, moves=[]):
+    def clear_table_trails(self):
+        for enum_i, i in enumerate(self.matrix):
+            for enum_j, j in enumerate(i):
+                if self.matrix[enum_i][enum_j] == 3 or self.matrix[enum_i][enum_j] == 6:
+                    self.matrix[enum_i][enum_j] = 0
+
+    def print(self, highlighted=0, moves=[], clear_trails=False):
         print("HV Value:", self.calculate())
         print("Turn:", turn)
 
@@ -373,18 +381,21 @@ class Board(object):
 
                 print(" " + str(num) + str(j), end="   |")
                 # print("  " + num + str(j), end="    ❙")
-                if self.matrix[enum_i][enum_j] == 3 or self.matrix[enum_i][enum_j] == 6:
+                if clear_trails and (self.matrix[enum_i][enum_j] == 3 or self.matrix[enum_i][enum_j] == 6):
                     self.matrix[enum_i][enum_j] = 0
             print("\n  |" + "－－－|" * 8)
         # if highlighted != 5:
             # print(self.lastjump)
             # last_jump_to_str(self.lastjump)
 
-    def send_signal(self):
+    def send_signal(self, explicit_move=None, new_move=True):
         if not self.signal:
             return None
-        print("OVO TREBA: ", self.possible_moves(1))
-        self.signal.sig.emit(self.lastjump, self.matrix, self.possible_moves(1))
+        if explicit_move:
+            # 4th arg is for updating position of table pieces
+            self.signal.sig.emit(self.lastjump, self.matrix, explicit_move, new_move)
+        else:
+            self.signal.sig.emit(self.lastjump, self.matrix, self.possible_moves(1), new_move)
         self.possible_moves(1)
 
     def play_game(self):
@@ -392,6 +403,7 @@ class Board(object):
         turn = 0
         stack = Stack([4, 3, 3])
         if pc_first:
+            self.send_signal()
             pc_moves = self.possible_moves(2)
             rand_move = random.choice(pc_moves)
             self.move(rand_move[0], rand_move[1], 2)
@@ -419,27 +431,28 @@ class Board(object):
                 else:
                     status = "Nerešeno"
                     return 3
-            while True:
-                play = self.pl_move()
-                if play == 1:
-                    break
-                if not play:
-                    status = "Računar je pobedio"
-                    return 0
-                self.print()
+
+            # Player move
+            play = self.pl_move()
+            if not play:
+                status = "Računar je pobedio"
+                return 0
+            self.print(clear_trails=True)
+
             turn += 1
-            self.print()
+            self.print(clear_trails=False)
             print("==PC==")
             self.lastjump[:] = []
-            while True:
-                play = self.pc_move(stack)
-                if play == 1:
-                    break
-                if not play:
-                    status = "Pobedili ste!"
-                    return 1
+
+            play = self.pc_move(stack)
+            if not play:
+                status = "Pobedili ste!"
+                return 1
 
     def pl_move(self, param=1, explicit=None):
+        if self.player_signal:       # If GUI exist call another function that does not require input from keyboard
+            return self.pl_gui_move(explicit)
+
         # self.pc_move(None, 1)
         all_moves = self.possible_moves(param)
         cells = []
@@ -455,6 +468,9 @@ class Board(object):
             print_moves(cells)
             while True:
                 cell_num = input("Unesite broj celije: ")
+
+                print("--- Poziv pauze ---")
+                self.player_signal.wait_for_move()
                 if cell_num.isnumeric():
                     cell_num = int(cell_num) - 1
                     if 0 <= cell_num < len(cells):
@@ -479,6 +495,21 @@ class Board(object):
                     break
         if self.move(position, ready_moves[int(r_broj)]) == 2:
             next_hop = self.eatable(1, ready_moves[int(r_broj)][0], ready_moves[int(r_broj)][1])
+            self.print()
+            self.pl_move(1, next_hop)
+        return 1
+
+    def pl_gui_move(self, explicit=None):
+
+        if not explicit:
+            gui_move = self.player_signal.wait_for_move()
+
+        else:
+            self.send_signal(explicit, new_move=False)
+            gui_move = self.player_signal.wait_for_move()
+
+        if self.move(gui_move[0], gui_move[1]) == 2:
+            next_hop = self.eatable(1, gui_move[1][0], gui_move[1][1])
             self.print()
             self.pl_move(1, next_hop)
         return 1
@@ -518,6 +549,8 @@ def print_moves(moves):
         print(str(i + 1) + ") " + str(chr(move[0] + 65)) + str(move[1] + 1), end="   |  ")
     print()
 
+def player_move():
+    pass
 
 def f_jump():
     global status
@@ -595,9 +628,21 @@ def last_jump_to_str(last_jump):
         a2 = lj%10
         lj = int(lj/10)
         a1 = lj%10
-        lj = int(lj/10)
 
         print(a1,a2,b1,b2)
+
+def last_jump_to_list(last_jump):
+    for lj in last_jump:
+        b2 = lj%10
+        lj = int(lj/10)
+        b1= lj%10
+        lj = int(lj/10)
+        a2 = lj%10
+        lj = int(lj/10)
+        a1 = lj%10
+
+        return [[a1, a2], [b1, b2]]
+
 
 if __name__ == '__main__':
 
