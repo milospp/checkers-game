@@ -126,7 +126,7 @@ class Board(object):
         if not new_matrix:
             self.matrix = [[0, 2, 0, 2, 0, 2, 0, 2],
                            [2, 0, 2, 0, 2, 0, 2, 0],
-                           [0, 4, 0, 2, 0, 2, 0, 2],
+                           [0, 2, 0, 2, 0, 2, 0, 2],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [1, 0, 1, 0, 1, 0, 1, 0],
@@ -135,12 +135,12 @@ class Board(object):
 
 
             # self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
+            #                [2, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 1, 0, 0],
+            #                [1, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 1, 0, 1, 0, 0, 0, 0],
             #                [0, 0, 0, 0, 0, 0, 0, 0],
-            #                [0, 0, 0, 0, 0, 0, 0, 0],
-            #                [0, 0, 0, 0, 0, 0, 0, 0],
-            #                [0, 0, 0, 5, 0, 0, 0, 0],
-            #                [0, 0, 1, 0, 0, 0, 0, 0],
-            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 1, 0, 1, 0, 0, 0, 0],
             #                [0, 0, 0, 0, 0, 0, 0, 0]]
 
             # self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
@@ -160,7 +160,6 @@ class Board(object):
             self.lastjump = []
         self.signal = pc_signal
         self.player_signal = player_signal
-
 
     def get_matrix(self):
         return self.matrix
@@ -395,15 +394,16 @@ class Board(object):
             # 4th arg is for updating position of table pieces
             self.signal.sig.emit(self.lastjump, self.matrix, explicit_move, new_move)
         else:
-            self.signal.sig.emit(self.lastjump, self.matrix, self.possible_moves(1), new_move)
+            self.signal.sig.emit(copy.deepcopy(self.lastjump), copy.deepcopy(self.matrix), self.possible_moves(1), new_move)
         self.possible_moves(1)
 
     def play_game(self):
         global status, turn, depth
         turn = 0
         stack = Stack([4, 3, 3])
+        self.send_signal(new_move=False)
+
         if pc_first:
-            self.send_signal()
             pc_moves = self.possible_moves(2)
             rand_move = random.choice(pc_moves)
             self.move(rand_move[0], rand_move[1], 2)
@@ -418,7 +418,7 @@ class Board(object):
                 print("Povećana dubina  na", depth)
             turn += 1
             self.print(1)
-            self.send_signal()
+            self.send_signal(new_move=True)
             self.lastjump[:] = []
             if turn > 80:
                 count = self.count_figures()
@@ -527,7 +527,8 @@ def next_hop_add(node, table, move, param, depth_ab):
     # first_layer_depth = True
 
     temp_new_table = Board(copy.deepcopy(table.matrix))
-    # temp_new_table.lastjump = table.lastjump
+    if first_layer_depth:
+        temp_new_table.lastjump = copy.deepcopy(table.lastjump)
     if temp_new_table.move(move[0], move[1], param, first_layer_depth=first_layer_depth) > 1:
         next_hop = temp_new_table.eatable(param, move[1][0], move[1][1])
         if len(next_hop) > 1:
@@ -632,6 +633,7 @@ def last_jump_to_str(last_jump):
         print(a1,a2,b1,b2)
 
 def last_jump_to_list(last_jump):
+    jumps = []
     for lj in last_jump:
         b2 = lj%10
         lj = int(lj/10)
@@ -641,7 +643,8 @@ def last_jump_to_list(last_jump):
         lj = int(lj/10)
         a1 = lj%10
 
-        return [[a1, a2], [b1, b2]]
+        jumps.append([[a1, a2], [b1, b2]])
+    return jumps
 
 
 if __name__ == '__main__':

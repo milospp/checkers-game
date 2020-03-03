@@ -1,6 +1,6 @@
-from PySide2.QtWidgets import QWidget, QStyleOption, QStyle, QFrame
+from PySide2.QtWidgets import QWidget, QStyleOption, QStyle, QFrame, QGraphicsDropShadowEffect
 from PySide2.QtGui import QPainter, QCursor
-from PySide2.QtCore import QPoint
+from PySide2.QtCore import QPoint, QPropertyAnimation, QRect, QTimer ,Qt
 
 
 class Piece(QFrame):
@@ -19,6 +19,19 @@ class Piece(QFrame):
         self.row = row
         self.movable = move
         self.possible_jumps = []
+        self.animator = QPropertyAnimation(self, b"geometry")
+        self.styles = {}
+
+        self.shadow = QGraphicsDropShadowEffect()
+        self.shadow.setBlurRadius(0)
+        self.shadow.setXOffset(0)
+        self.shadow.setYOffset(0)
+        self.setGraphicsEffect(self.shadow)
+
+
+        self.setAttribute(Qt.WA_NoSystemBackground)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
 
     def update_size(self, w, h):
         # print(grid[0][0].width())
@@ -43,19 +56,63 @@ class Piece(QFrame):
         p = QPainter(self)
         self.style().drawPrimitive(QStyle.PE_Widget, o, p, self)
 
+    def resizeEvent(self, event):
+        super(Piece, self).resizeEvent(event)
+
+        width = event.size().width()
+
+        if self.styles:
+            self.setStyleSheet("background: " + self.styles["background"] + ";" +
+                               "border-radius: " + str(width/2-2) + "px;" +
+                               "border-style: outset;" +
+                               "border-width: " + self.styles["border-width"] + "px;" +
+                               "border-color: " + self.styles["border-color"] + ";")
+
+    def enterEvent(self, event):
+        if self.movable:
+            self.move(self.pos().x()-10, self.pos().y()-10)
+            self.shadow.setBlurRadius(5)
+            self.shadow.setXOffset(10)
+            self.shadow.setYOffset(10)
+
+    def leaveEvent(self, event):
+        if self.movable:
+            self.update_position()
+            self.shadow.setBlurRadius(0)
+            self.shadow.setXOffset(0)
+            self.shadow.setYOffset(0)
+
+    def wheelEvent(self, event):
+        self.shrink_animation()
+
     def mousePressEvent(self, event):
         super(Piece, self).mousePressEvent(event)
+
+        # Cancel all animation and replace matrix
+
+        if self.main_window.animation_timer_list:
+            for timer in self.main_window.animation_timer_list:
+                timer.stop()
+            self.possible_jumps.clear()
+            self.main_window.replace_matrix(None, self)
+            self.main_window.animation_timer_list = []
+
         self.offset = event.globalPos()-self.pos()
 
     def mouseMoveEvent(self, event):
         super(Piece, self).mouseMoveEvent(event)
+        self.raise_()
         if self.movable:
             self.move(event.globalPos() - self.offset)
 
     def mouseReleaseEvent(self, event):
         super(Piece, self).mouseReleaseEvent(event)
+        self.shadow.setBlurRadius(0)
+        self.shadow.setXOffset(0)
+        self.shadow.setYOffset(0)
         # self.offset = event.globalPos()-self.pos()
-        self.calc_position()
+        if self.movable:
+            self.calc_position()
 
     def update_position(self):
         width = (self.table_width-20) / 8
@@ -70,15 +127,34 @@ class Piece(QFrame):
         new_row = int(y_center/cell_size)
         if y_center >= 10 and new_row <= 7 and x_center >= 10 and new_col <= 7:
             if self.is_position_valid(new_row, new_col):
+                self.movable = False
+                self.main_window.pieces_matrix[self.row][self.col] = 0
+                self.main_window.pieces_matrix[new_row][new_col] = self
                 old = [self.row, self.col]
+
                 self.row = new_row
                 self.col = new_col
                 self.main_window.lock_pieces()
+                if self.row == 0:
+                    if self.piece_type == 1:
+                        self.piece_type = 4
+                    self.paint_piece()
+                    # elif self.piece_type == 2:
+                    #     self.piece_type = 5
+                    # QTimer.singleShot(500, self.paint_piece)
                 # self.main_window.game.playerMove.sig.emit("test")
-                self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]])  # Stop eventloop in singals.py
+                QTimer.singleShot(10, lambda: self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]]))
+
+                if abs(new_row - old[0]) == 2:
+                    ate_x = int((new_row + old[0])/2)
+                    ate_y = int((new_col + old[1])/2)
+                    self.main_window.pieces_matrix[ate_x][ate_y].shrink_animation()
+
+                # self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]])  # Stop eventloop in singals.py
+
         self.update_position()
 
-    def is_position_valid(self,row,col):
+    def is_position_valid(self, row, col):
         for jmp in self.possible_jumps:
             if row == jmp[0] and col == jmp[1]:
                 return True
@@ -93,9 +169,18 @@ class Piece(QFrame):
 
         else:
             border_radius = self.border_radius
-            border_color = "#999"
+            if self.piece_type == 1:
+                border_color = "#444"
+            else:
+                border_color = "#999"
+
             border_width /= 2
 
+        self.styles["background"] = str(color)
+        self.styles["border-radius"] = str(border_radius)
+        self.styles["border-style"] = "outset"
+        self.styles["border-width"] = str(border_width)
+        self.styles["border-color"] = border_color
 
         self.setStyleSheet("background: " + str(color) + ";" +
                            "border-radius: " + str(border_radius) + "px;" +
@@ -105,7 +190,59 @@ class Piece(QFrame):
         self.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
 
         # self.setFrameStyle(QFrame.Raised)
-        self.setLineWidth(20)
+        # self.setLineWidth(20)
+
+        # if self.movable:
+        #     self.shadow.setBlurRadius(5)
+        #     self.shadow.setXOffset(10)
+        #     self.shadow.setYOffset(10)
+        # else:
+        #     self.shadow.setBlurRadius(0)
+        #     self.shadow.setXOffset(0)
+        #     self.shadow.setYOffset(0)
+
+    def animate_move(self, i, j):
+        self.raise_()
+        self.animator.stop()
+        y = (self.table_width - 20) / 8 * i + 10
+        x = (self.table_width - 20) / 8 * j + 10
+        old_rect = QRect(self.pos().x(), self.pos().y(), self.width(), self.height())
+        rect = QRect(x, y, self.height(), self.width())
+        self.animator.setDuration(500)
+        self.animator.setStartValue(old_rect)
+        self.animator.setEndValue(rect)
+        self.animator.start()
+
+        self.main_window.pieces_matrix[i][j] = self.main_window.pieces_matrix[self.row][self.col]
+        self.main_window.pieces_matrix[self.row][self.col] = 0
+
+        # if abs(self.row - i) == 2:
+        #     QTimer.singleShot(10, lambda: self.main_window.pieces_matrix[ate_x][ate_y]())
+        #     # self.main_window.pieces_matrix[ate_x][ate_y].shrink_animation()
+        #     # self.shrink_animation
+
+        self.row = i
+        self.col = j
+        if self.row == 7:
+            if self.piece_type == 1:
+                self.piece_type = 4
+            elif self.piece_type == 2:
+                self.piece_type = 5
+            QTimer.singleShot(500, self.paint_piece)
+
+    def shrink_animation(self):
+        tile_width = (self.table_width-20) / 8
+        self.animator.stop()
+        old_rect = QRect(self.pos().x(), self.pos().y(), self.width(), self.height())
+        rect = QRect(self.pos().x() + tile_width/2, self.pos().y() + tile_width/2, 0, 0)
+        self.animator.setDuration(500)
+        self.animator.setStartValue(old_rect)
+        self.animator.setEndValue(rect)
+        self.styleSheet()
+        self.animator.start()
+
+
+
 
 def get_piece_color(type):
     if type == 1:           #Player a
