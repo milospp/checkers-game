@@ -20,3 +20,7 @@ class PlayerMoveSignal(QObject):
     def wait_for_move(self):
         self.eventLoop.exec_()
         return self.data
+
+
+class FinishSignal(QObject):
+    sig = Signal(int)

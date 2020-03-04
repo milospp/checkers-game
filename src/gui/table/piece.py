@@ -27,14 +27,9 @@ class Piece(QFrame):
         self.shadow.setXOffset(0)
         self.shadow.setYOffset(0)
         self.setGraphicsEffect(self.shadow)
-
-
-        self.setAttribute(Qt.WA_NoSystemBackground)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.confirm_jump_stop = False
 
     def update_size(self, w, h):
-        # print(grid[0][0].width())
         if w > h:
             self.table_width = h
         else:
@@ -58,7 +53,6 @@ class Piece(QFrame):
 
     def resizeEvent(self, event):
         super(Piece, self).resizeEvent(event)
-
         width = event.size().width()
 
         if self.styles:
@@ -82,26 +76,32 @@ class Piece(QFrame):
             self.shadow.setXOffset(0)
             self.shadow.setYOffset(0)
 
-    def wheelEvent(self, event):
-        self.shrink_animation()
-
     def mousePressEvent(self, event):
+        print("eee")
+
         super(Piece, self).mousePressEvent(event)
+        print("mousepressevent")
+        self.main_window.remove_marks(True)
+        self.main_window.create_marks(self.possible_jumps)
+        self.main_window.mark_source = [self.row, self.col]
+        self.offset = event.globalPos()-self.pos()
 
         # Cancel all animation and replace matrix
-
         if self.main_window.animation_timer_list:
             for timer in self.main_window.animation_timer_list:
+                if timer.objectName() == "end":
+                    self.main_window.replace_matrix()
+                    timer.setInterval(10)
+                    return
                 timer.stop()
             self.possible_jumps.clear()
             self.main_window.replace_matrix(None, self)
             self.main_window.animation_timer_list = []
 
-        self.offset = event.globalPos()-self.pos()
-
     def mouseMoveEvent(self, event):
         super(Piece, self).mouseMoveEvent(event)
         self.raise_()
+        # self.confirm_jump_stop = True
         if self.movable:
             self.move(event.globalPos() - self.offset)
 
@@ -112,21 +112,33 @@ class Piece(QFrame):
         self.shadow.setYOffset(0)
         # self.offset = event.globalPos()-self.pos()
         if self.movable:
-            self.calc_position()
+
+            self.calc_position(True)
 
     def update_position(self):
         width = (self.table_width-20) / 8
         self.move(width * self.col + 10, width * self.row + 10)
 
-    def calc_position(self):
+    def calc_position(self, user=False):
         widget_size = self.table_width - 20
         cell_size = widget_size / 8
         x_center = self.pos().x() - 10 + cell_size / 2
         y_center = self.pos().y() - 10 + cell_size / 2
         new_col = int(x_center/cell_size)
         new_row = int(y_center/cell_size)
+        if user and new_row == self.row and new_col == self.col:
+            if [new_row, new_col] in self.possible_jumps:
+                if not self.confirm_jump_stop:
+                    self.confirm_jump_stop = True
+                    return
+            else:
+                return
+        self.confirm_jump_stop = False
+
         if y_center >= 10 and new_row <= 7 and x_center >= 10 and new_col <= 7:
             if self.is_position_valid(new_row, new_col):
+                self.main_window.remove_marks(True)
+
                 self.movable = False
                 self.main_window.pieces_matrix[self.row][self.col] = 0
                 self.main_window.pieces_matrix[new_row][new_col] = self
@@ -143,13 +155,16 @@ class Piece(QFrame):
                     #     self.piece_type = 5
                     # QTimer.singleShot(500, self.paint_piece)
                 # self.main_window.game.playerMove.sig.emit("test")
-                QTimer.singleShot(10, lambda: self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]]))
+                print("Piece pred zvanje",[old, [self.row, self.col]], user)
+                QTimer.singleShot(0, lambda: self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]]))
 
                 if abs(new_row - old[0]) == 2:
                     ate_x = int((new_row + old[0])/2)
                     ate_y = int((new_col + old[1])/2)
                     self.main_window.pieces_matrix[ate_x][ate_y].shrink_animation()
-
+                    self.main_window.pl_last_eat = [new_row, new_col]
+                else:
+                    self.main_window.pl_last_eat = []
                 # self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]])  # Stop eventloop in singals.py
 
         self.update_position()
@@ -212,7 +227,6 @@ class Piece(QFrame):
         self.animator.setStartValue(old_rect)
         self.animator.setEndValue(rect)
         self.animator.start()
-
         self.main_window.pieces_matrix[i][j] = self.main_window.pieces_matrix[self.row][self.col]
         self.main_window.pieces_matrix[self.row][self.col] = 0
 
@@ -230,6 +244,21 @@ class Piece(QFrame):
                 self.piece_type = 5
             QTimer.singleShot(500, self.paint_piece)
 
+    def animate_pl_move(self, i, j):
+        self.raise_()
+        self.animator.stop()
+        self.animator = QPropertyAnimation(self, b"geometry")
+        y = (self.table_width - 20) / 8 * i + 10
+        x = (self.table_width - 20) / 8 * j + 10
+        old_rect = QRect(self.pos().x(), self.pos().y(), self.width(), self.height())
+        rect = QRect(x, y, self.height(), self.width())
+        self.animator.setDuration(500)
+        self.animator.setStartValue(old_rect)
+        self.animator.setEndValue(rect)
+        self.animator.finished.connect(self.calc_position)
+
+        self.animator.start()
+
     def shrink_animation(self):
         tile_width = (self.table_width-20) / 8
         self.animator.stop()
@@ -240,8 +269,6 @@ class Piece(QFrame):
         self.animator.setEndValue(rect)
         self.styleSheet()
         self.animator.start()
-
-
 
 
 def get_piece_color(type):

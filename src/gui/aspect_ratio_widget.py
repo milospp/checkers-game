@@ -5,6 +5,7 @@ from PySide2.QtWidgets import QBoxLayout, QSpacerItem, QWidget
 class AspectRatioWidget(QWidget):
     def __init__(self, widget, parent):
         super().__init__(parent)
+        self.setParent(parent)
         self.setStyleSheet("background:#222; padding:0; margin:0")
         self.setLayout(QBoxLayout(QBoxLayout.LeftToRight, self))
         self.layout().setMargin(0)

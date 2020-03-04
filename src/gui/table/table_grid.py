@@ -3,10 +3,12 @@ from src.gui.table.tile import Tile
 
 
 class TableGrid(QGridLayout):
-    def __init__(self):
+    def __init__(self, parent=None):
         super(TableGrid, self).__init__()
         self.setSpacing(0)
         self.table = [[0]*8,[0]*8,[0]*8,[0]*8,[0]*8,[0]*8,[0]*8,[0]*8]
+        self.main_window = parent
+
         self.generate_tiles()
         self.setMargin(10)
 
@@ -17,6 +19,6 @@ class TableGrid(QGridLayout):
                     color = "#aaa"
                 else:
                     color = "#333"
-                self.table[i][j] = Tile(color)
+                self.table[i][j] = Tile(self.main_window, color, i ,j)
                 self.addWidget(self.table[i][j], i, j)
 

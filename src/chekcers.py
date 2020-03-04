@@ -122,7 +122,7 @@ class Stack:
 
 
 class Board(object):
-    def __init__(self, new_matrix=None, last_jmp=None, pc_signal=None, player_signal=None):
+    def __init__(self, new_matrix=None, last_jmp=None, pc_signal=None, player_signal=None, finish_signal=None):
         if not new_matrix:
             self.matrix = [[0, 2, 0, 2, 0, 2, 0, 2],
                            [2, 0, 2, 0, 2, 0, 2, 0],
@@ -133,15 +133,23 @@ class Board(object):
                            [0, 1, 0, 1, 0, 1, 0, 1],
                            [1, 0, 1, 0, 1, 0, 1, 0]]
 
+            self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
+                           [2, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0],
+                           [1, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 1, 0, 1, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 1, 0, 1, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0]]
 
-            # self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
-            #                [2, 0, 0, 0, 0, 0, 0, 0],
-            #                [0, 0, 0, 0, 0, 1, 0, 0],
-            #                [1, 0, 0, 0, 0, 0, 0, 0],
-            #                [0, 1, 0, 1, 0, 0, 0, 0],
-            #                [0, 0, 0, 0, 0, 0, 0, 0],
-            #                [0, 1, 0, 1, 0, 0, 0, 0],
-            #                [0, 0, 0, 0, 0, 0, 0, 0]]
+            self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 2, 0, 2, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 2, 0, 2, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 2, 0, 0, 0, 0, 0],
+                           [0, 1, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0]]
 
             # self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
             #                [0, 0, 0, 0, 0, 0, 0, 0],
@@ -160,6 +168,7 @@ class Board(object):
             self.lastjump = []
         self.signal = pc_signal
         self.player_signal = player_signal
+        self.finish_signal = finish_signal
 
     def get_matrix(self):
         return self.matrix
@@ -335,6 +344,7 @@ class Board(object):
                     self.matrix[enum_i][enum_j] = 0
 
     def print(self, highlighted=0, moves=[], clear_trails=False):
+        return
         print("HV Value:", self.calculate())
         print("Turn:", turn)
 
@@ -395,7 +405,6 @@ class Board(object):
             self.signal.sig.emit(self.lastjump, self.matrix, explicit_move, new_move)
         else:
             self.signal.sig.emit(copy.deepcopy(self.lastjump), copy.deepcopy(self.matrix), self.possible_moves(1), new_move)
-        self.possible_moves(1)
 
     def play_game(self):
         global status, turn, depth
@@ -424,18 +433,23 @@ class Board(object):
                 count = self.count_figures()
                 if count > 0:
                     status = "Računar je u prednosti"
+                    self.finish_message(4)
                     return 0
                 elif count < 0:
                     status = "Igrač je u prednosti"
+                    self.finish_message(3)
                     return 1
                 else:
                     status = "Nerešeno"
+                    self.finish_message(0)
                     return 3
 
             # Player move
             play = self.pl_move()
+            print("checkers.py Player zavrsio")
             if not play:
                 status = "Računar je pobedio"
+                self.finish_message(2)
                 return 0
             self.print(clear_trails=True)
 
@@ -447,6 +461,7 @@ class Board(object):
             play = self.pc_move(stack)
             if not play:
                 status = "Pobedili ste!"
+                self.finish_message(1)
                 return 1
 
     def pl_move(self, param=1, explicit=None):
@@ -469,8 +484,9 @@ class Board(object):
             while True:
                 cell_num = input("Unesite broj celije: ")
 
-                print("--- Poziv pauze ---")
-                self.player_signal.wait_for_move()
+                # print("--- Poziv pauze ---")
+                # self.player_signal.wait_for_move()
+
                 if cell_num.isnumeric():
                     cell_num = int(cell_num) - 1
                     if 0 <= cell_num < len(cells):
@@ -500,19 +516,27 @@ class Board(object):
         return 1
 
     def pl_gui_move(self, explicit=None):
-
+        if not self.possible_moves(1):
+            return None
         if not explicit:
             gui_move = self.player_signal.wait_for_move()
+            print("primio signal 1")
 
         else:
             self.send_signal(explicit, new_move=False)
             gui_move = self.player_signal.wait_for_move()
+            print("primio signal 2 exp")
 
+
+        print([gui_move[0], gui_move[1]])
         if self.move(gui_move[0], gui_move[1]) == 2:
             next_hop = self.eatable(1, gui_move[1][0], gui_move[1][1])
             self.print()
-            self.pl_move(1, next_hop)
+            self.pl_gui_move(next_hop)
         return 1
+
+    def finish_message(self, s):
+        self.finish_signal.sig.emit(s)
 
 
 def generate(node, param, depth_ab):
