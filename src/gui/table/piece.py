@@ -1,6 +1,6 @@
 from PySide2.QtWidgets import QWidget, QStyleOption, QStyle, QFrame, QGraphicsDropShadowEffect
 from PySide2.QtGui import QPainter, QCursor
-from PySide2.QtCore import QPoint, QPropertyAnimation, QRect, QTimer ,Qt
+from PySide2.QtCore import QPoint, QPropertyAnimation, QRect, QTimer, QThread
 
 
 class Piece(QFrame):
@@ -77,13 +77,13 @@ class Piece(QFrame):
             self.shadow.setYOffset(0)
 
     def mousePressEvent(self, event):
-        print("eee")
 
         super(Piece, self).mousePressEvent(event)
-        print("mousepressevent")
+        # print("mousepressevent")
         self.main_window.remove_marks(True)
-        self.main_window.create_marks(self.possible_jumps)
-        self.main_window.mark_source = [self.row, self.col]
+        if self.movable:
+            self.main_window.create_marks(self.possible_jumps)
+            self.main_window.mark_source = [self.row, self.col]
         self.offset = event.globalPos()-self.pos()
 
         # Cancel all animation and replace matrix
@@ -99,6 +99,7 @@ class Piece(QFrame):
             self.main_window.animation_timer_list = []
 
     def mouseMoveEvent(self, event):
+        # print("Move event, Piece")
         super(Piece, self).mouseMoveEvent(event)
         self.raise_()
         # self.confirm_jump_stop = True
@@ -156,7 +157,9 @@ class Piece(QFrame):
                     # QTimer.singleShot(500, self.paint_piece)
                 # self.main_window.game.playerMove.sig.emit("test")
                 print("Piece pred zvanje",[old, [self.row, self.col]], user)
-                QTimer.singleShot(0, lambda: self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]]))
+
+
+                QTimer.singleShot(10, lambda: self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]]))
 
                 if abs(new_row - old[0]) == 2:
                     ate_x = int((new_row + old[0])/2)
@@ -167,6 +170,7 @@ class Piece(QFrame):
                     self.main_window.pl_last_eat = []
                 # self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]])  # Stop eventloop in singals.py
 
+        print("Update position")
         self.update_position()
 
     def is_position_valid(self, row, col):
@@ -245,6 +249,9 @@ class Piece(QFrame):
             QTimer.singleShot(500, self.paint_piece)
 
     def animate_pl_move(self, i, j):
+        if not self.is_position_valid(i,j):
+            print("Piece, ne mnoze move")
+            return
         self.raise_()
         self.animator.stop()
         self.animator = QPropertyAnimation(self, b"geometry")

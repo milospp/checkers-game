@@ -2,7 +2,7 @@ from src.gui.thread.game_loop import GameLoop
 from PySide2.QtWidgets import QMainWindow, QWidget, QGridLayout, QBoxLayout, QHBoxLayout
 from PySide2.QtCore import QTimer
 from PySide2.QtGui import QPainter, QBrush, QColor
-from PySide2.QtCore import Qt
+from PySide2.QtCore import QThread
 from src.gui.table.table_grid import TableGrid
 from src.gui.table.piece import Piece
 from src.gui.table.mark import Mark
@@ -17,6 +17,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super(MainWindow, self).__init__()
+
         self.game = GameLoop(self)
 
         self.centerWidget = QWidget(self)
@@ -69,7 +70,7 @@ class MainWindow(QMainWindow):
             self.overlayBG.resizeEvent(event)
 
     def init_game_thread(self):
-        self.game.start()
+        self.game.start(QThread.LowPriority)
         self.game.signalPieces.sig.connect(self.pc_piece_move)
 
     # Player_move control should move be animated
@@ -101,8 +102,6 @@ class MainWindow(QMainWindow):
             for i, one_jump in enumerate(jump_list):
                 jump_from = one_jump[0]
                 jump_to = one_jump[1]
-                print([jump_from, jump_to])
-                print(jump_list)
                 self.print_matrix()
                 mov_piece = self.pieces_matrix[jump_list[0][0][0]][jump_list[0][0][1]]
 
@@ -197,7 +196,7 @@ class MainWindow(QMainWindow):
             if self.pieces_matrix[i][j]:
                 self.pieces_matrix[i][j].movable = True
                 self.pieces_matrix[i][j].possible_jumps.append(mov[1])
-            if mov[0] == self.pl_last_eat:
+            if mov[0] == self.pl_last_eat and abs(mov[1][0] - self.pl_last_eat[0]) == 2:
                 jump_piece = self.pieces_matrix[mov[0][0]][mov[0][1]]
         if jump_piece:
             self.create_marks(jump_piece.possible_jumps)
@@ -205,7 +204,7 @@ class MainWindow(QMainWindow):
             jump_piece.confirm_jump_stop = True
 
     def click_on_tile(self, i, j):
-        print(i,j)
+        # print(i,j)
         for mark in self.marks:
             x1, y1 = self.mark_source[0], self.mark_source[1]
 

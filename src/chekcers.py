@@ -4,6 +4,8 @@ import random
 
 
 def minimax(node, depth_ab, alpha, beta, maximizing):
+    # if depth_ab == depth - 1:
+    #     time.sleep(0.01)
     # def minimax(node, depth, maximizing):
     if depth_ab == 0:  # or game OVER
         node.calc()
@@ -133,23 +135,32 @@ class Board(object):
                            [0, 1, 0, 1, 0, 1, 0, 1],
                            [1, 0, 1, 0, 1, 0, 1, 0]]
 
-            self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
-                           [2, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0],
-                           [1, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 1, 0, 1, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 1, 0, 1, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0]]
+            # self.matrix = [[0, 2, 0, 2, 0, 2, 0, 2],
+            #                [2, 0, 2, 0, 2, 0, 2, 0],
+            #                [0, 2, 0, 2, 0, 2, 0, 2],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [1, 0, 2, 0, 1, 0, 1, 0],
+            #                [0, 1, 0, 1, 0, 1, 0, 1],
+            #                [1, 0, 1, 0, 1, 0, 1, 0]]
 
-            self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 2, 0, 2, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 2, 0, 2, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 2, 0, 0, 0, 0, 0],
-                           [0, 1, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0]]
+            # self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
+            #                [2, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [1, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 1, 0, 1, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 1, 0, 1, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0]]
+            #
+            # self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 2, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 2, 0, 2, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 2, 0, 0, 0, 0, 0],
+            #                [0, 1, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0]]
 
             # self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
             #                [0, 0, 0, 0, 0, 0, 0, 0],
@@ -446,7 +457,7 @@ class Board(object):
 
             # Player move
             play = self.pl_move()
-            print("checkers.py Player zavrsio")
+            # print("checkers.py Player zavrsio")
             if not play:
                 status = "Računar je pobedio"
                 self.finish_message(2)
@@ -459,6 +470,7 @@ class Board(object):
             self.lastjump[:] = []
 
             play = self.pc_move(stack)
+            time.sleep(0.1)
             if not play:
                 status = "Pobedili ste!"
                 self.finish_message(1)
@@ -520,15 +532,15 @@ class Board(object):
             return None
         if not explicit:
             gui_move = self.player_signal.wait_for_move()
-            print("primio signal 1")
+            # print("primio signal 1")
 
         else:
             self.send_signal(explicit, new_move=False)
             gui_move = self.player_signal.wait_for_move()
-            print("primio signal 2 exp")
+            # print("primio signal 2 exp")
 
 
-        print([gui_move[0], gui_move[1]])
+        # print([gui_move[0], gui_move[1]])
         if self.move(gui_move[0], gui_move[1]) == 2:
             next_hop = self.eatable(1, gui_move[1][0], gui_move[1][1])
             self.print()

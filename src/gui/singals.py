@@ -6,8 +6,9 @@ class PcMoveSignal(QObject):
 
 
 class PlayerMoveSignal(QObject):
-    def __init__(self):
+    def __init__(self, parent):
         super(PlayerMoveSignal, self).__init__()
+        self.game = parent
         self.sig = Signal(str)
         self.eventLoop = QEventLoop(self)
         self.data = None
@@ -16,6 +17,7 @@ class PlayerMoveSignal(QObject):
     def stop_waiting(self, data):
         self.data = data
         self.eventLoop.exit()
+        return
 
     def wait_for_move(self):
         self.eventLoop.exec_()
