@@ -21,6 +21,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
 
         self.game = GameLoop(self)
+        self.remember_choice_config = [False, False, 2]
 
         self.centerWidget = QWidget(self)
         self.center_layout = TableGrid(self)
@@ -32,6 +33,10 @@ class MainWindow(QMainWindow):
         self.grid = self.center_layout.table
         self.available_moves = []
         self.current_matrix = []
+        self.current_heuristic = None
+
+        # Undo table is saved after every pc move, but if PC plays first, we cant save table before 1st move
+        self.pc_first_jump = True
 
         self.animation_timer_list = []
         self.animation_shrink_list = []
@@ -83,26 +88,39 @@ class MainWindow(QMainWindow):
         self.game.signalPieces.sig.connect(self.pc_piece_move)
 
     # Player_move control should move be animated
-    def pc_piece_move(self, jump, matrix, all_moves, moved=True):
+    def pc_piece_move(self, jump, matrix, all_moves, moved=True, heuristic_value = None):
         self.available_moves = all_moves
         old_matrix = self.current_matrix
-        self.current_matrix = matrix
+        self.current_matrix = deepcopy(matrix)
         self.update_movable_tag()
 
         # Player jumped, pieces is moved by gui, no need to repalce anything
         if not moved and jump:
             print("NOT MOVED AND JUMP")
+            self.history_table.append([deepcopy(old_matrix), self.current_heuristic])
+
             return
+        self.remove_marks(True)
 
         if not moved:
             self.replace_matrix(matrix)
             self.update_movable_tag()
+            if self.current_heuristic is None:
+                self.current_heuristic = heuristic_value
+                self.update_heuristic_bar(heuristic_value)
             return
 
         if jump:
             self.pl_last_eat = []
             self.history_redo.clear()
-            self.history_table.append(deepcopy(old_matrix))
+
+            if self.pc_first_jump and self.remember_choice_config[1]:
+                self.pc_first_jump = False
+            else:
+                self.history_table.append([deepcopy(old_matrix), self.current_heuristic])
+            self.current_heuristic = heuristic_value
+
+            self.update_undo_redo_btn()
 
             jump_list = last_jump_to_list(jump)
             rng = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
@@ -115,7 +133,6 @@ class MainWindow(QMainWindow):
             for i, one_jump in enumerate(jump_list):
                 jump_from = one_jump[0]
                 jump_to = one_jump[1]
-                self.print_matrix()
                 mov_piece = self.pieces_matrix[jump_list[0][0][0]][jump_list[0][0][1]]
 
                 self.animation_timer_list.append(QTimer())
@@ -137,13 +154,9 @@ class MainWindow(QMainWindow):
                         lambda: self.shrink_piece(eated_list[0][0], eated_list.pop(0)[1]))
                     self.animation_shrink_list[-1].start()
 
-                    # QTimer.singleShot(500*i+wait_animation+250, lambda: self.shrink_piece(eated_list[0][0],eated_list.pop(0)[1]))
-                    # QTimer.singleShot(500*i+wait_animation+250, lambda: self.pieces_matrix[eated_list[0][0]][eated_list.pop(0)[1]].shrink_animation())
-                    #     # self.main_window.pieces_matrix[ate_x][ate_y].shrink_animation()
-                    #     # self.shrink_animation
-
                 if jump_to[0] == 7:
                     wait_animation = 200
+
 
             self.animation_timer_list.append(QTimer())
             self.animation_timer_list[-1].setSingleShot(True)
@@ -151,9 +164,9 @@ class MainWindow(QMainWindow):
             self.animation_timer_list[-1].timeout.connect(self.replace_matrix)
             self.animation_timer_list[-1].timeout.connect(lambda: self.animation_timer_list.clear())
             self.animation_timer_list[-1].start()
-            # self.time.singleShot(500*i+500+wait_animation, self.replace_matrix)
 
-            # self.update_movable_tag()
+            self.update_heuristic_bar(self.current_heuristic)
+            # End of if jump
 
     def shrink_piece(self,i,j):
         if self.pieces_matrix[i][j]:
@@ -217,7 +230,6 @@ class MainWindow(QMainWindow):
             jump_piece.confirm_jump_stop = True
 
     def click_on_tile(self, i, j):
-        # print(i,j)
         for mark in self.marks:
             x1, y1 = self.mark_source[0], self.mark_source[1]
 
@@ -226,7 +238,6 @@ class MainWindow(QMainWindow):
                 x2,y2 = mark.row, mark.col
 
                 if self.pieces_matrix[x1][y1]:
-                    print("zvanje animacije")
                     self.pieces_matrix[x1][y1].animate_pl_move(x2, y2)
                 # self.pieces_matrix[x1][y1].calc_position()
             else:
@@ -273,6 +284,9 @@ class MainWindow(QMainWindow):
                 self.animation_timer_list[-1].timeout.connect(lambda: self.show_menu(status, False))
                 self.animation_timer_list[-1].start()
                 return
+        if self.overlayBG:
+            if self.overlayBG.isVisible():
+                return
 
         bo = BlackOverlay(self.aspect_ratio_widget)
         bo.raise_()
@@ -289,8 +303,7 @@ class MainWindow(QMainWindow):
         self.overlayBG = bo
         self.overlay = end
 
-    def start_game(self):
-        print("START GAME")
+    def start_game(self, force_move=False, pc_first=False, depth=5, matrix=None):
         for i in self.animation_shrink_list:
             i.stop()
 
@@ -299,38 +312,71 @@ class MainWindow(QMainWindow):
         self.pieces_matrix = [[0]*8]*8
         self.available_moves.clear()
         self.current_matrix.clear()
+        self.current_heuristic = None
+        self.pc_first_jump = True
         self.animation_timer_list.clear()
+        self.remove_marks(True)
         self.mark_source.clear()
-        self.marks.clear()
+
+        # matix is sent as starting table in new game, if we click undo in the end of game
+        if not matrix:
+            self.history_table.clear()
+            self.history_redo.clear()
 
         self.overlay.close()
         self.overlayBG.close()
-        self.game.exit()
-        self.game = GameLoop(self)
+        self.game.terminate()
+        self.game = GameLoop(self, force_move, pc_first, depth, matrix)
 
         self.init_game_thread()
 
     def undo_move(self):
-        print("undo", self.history_table)
-        print("redo", self.history_redo)
         if self.history_table:
-            self.history_redo.append(deepcopy(self.current_matrix))
-            # self.current_matrix = self.history_table.pop()
-            # self.replace_matrix(self.current_matrix)
-            # self.game.playerMove.stop_waiting([-1, self.current_matrix])
-            self.game.playerMove.stop_waiting([-1, self.history_table.pop()])
+            self.history_redo.append([deepcopy(self.current_matrix), self.current_heuristic])
+            undo = self.history_table.pop()
+            self.game.playerMove.stop_waiting([-1, undo[0]])
+            self.current_heuristic = undo[1]
+            self.update_heuristic_bar(self.current_heuristic)
+            self.update_undo_redo_btn()
 
     def redo_move(self):
-        print("undo", self.history_table)
-        print("redo", self.history_redo)
-
         if self.history_redo:
-            self.history_table.append(deepcopy(self.current_matrix))
-            # self.current_matrix = self.history_redo.pop()
-            # self.replace_matrix(self.current_matrix)
-            # self.game.playerMove.stop_waiting([-1, self.current_matrix])
-            self.game.playerMove.stop_waiting([-1, self.history_redo.pop()])
+            self.history_table.append([deepcopy(self.current_matrix), self.current_heuristic])
+            redo = self.history_redo.pop()
+            self.game.playerMove.stop_waiting([-1, redo[0]])
+            self.current_heuristic = redo[1]
+            self.update_heuristic_bar(self.current_heuristic)
+            self.update_undo_redo_btn()
 
+    def update_undo_redo_btn(self):
+        if self.history_table:
+            self.sideWidget.btn_undo.setDisabled(False)
+        else:
+            self.sideWidget.btn_undo.setDisabled(True)
+        if self.history_redo:
+            self.sideWidget.btn_redo.setDisabled(False)
+        else:
+            self.sideWidget.btn_redo.setDisabled(True)
+
+    def update_heuristic_bar(self, value):
+        bar = self.sideWidget.progress_bar
+
+        if value == 900:
+            value = 100
+        elif value == -900:
+            value = -100
+        elif value >= 99:
+            value = 99
+        elif value <= -99:
+            value = -99
+
+        value = -value
+
+        bar.animate_value(value)
+
+    def clear_overlay(self):
+        self.overlayBG.close()
+        self.overlay.close()
 
     def print_matrix(self):
         for i in self.pieces_matrix:
