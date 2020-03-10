@@ -23,13 +23,13 @@ class MainWindow(QMainWindow):
         self.game = GameLoop(self)
         self.remember_choice_config = [False, False, 2]
 
-        self.centerWidget = QWidget(self)
+        self.center_widget = QWidget(self)
         self.center_layout = TableGrid(self)
 
-        self.sideWidget = SidePanel(self)
+        self.side_widget = SidePanel(self)
 
         self.pieces = []
-        self.pieces_matrix = [[0]*8]*8
+        self.pieces_matrix = [[0] * 8] * 8
         self.grid = self.center_layout.table
         self.available_moves = []
         self.current_matrix = []
@@ -50,7 +50,7 @@ class MainWindow(QMainWindow):
         self.overlayBG = None
         self.overlay = None
 
-        self.aspect_ratio_widget = AspectRatioWidget(self.centerWidget, self.sideWidget, None)
+        self.aspect_ratio_widget = AspectRatioWidget(self.center_widget, self.side_widget, None)
 
         self.setStyleSheet("background:#333;")
         self.draw_table()
@@ -67,7 +67,7 @@ class MainWindow(QMainWindow):
         self.resize(768, 768)
 
     def draw_table(self):
-        self.centerWidget.setLayout(self.center_layout)
+        self.center_widget.setLayout(self.center_layout)
         self.setCentralWidget(self.aspect_ratio_widget)
 
     def resizeEvent(self, event):
@@ -88,7 +88,7 @@ class MainWindow(QMainWindow):
         self.game.signalPieces.sig.connect(self.pc_piece_move)
 
     # Player_move control should move be animated
-    def pc_piece_move(self, jump, matrix, all_moves, moved=True, heuristic_value = None):
+    def pc_piece_move(self, jump, matrix, all_moves, moved=True, heuristic_value=None):
         self.available_moves = all_moves
         old_matrix = self.current_matrix
         self.current_matrix = deepcopy(matrix)
@@ -96,7 +96,6 @@ class MainWindow(QMainWindow):
 
         # Player jumped, pieces is moved by gui, no need to repalce anything
         if not moved and jump:
-            print("NOT MOVED AND JUMP")
             self.history_table.append([deepcopy(old_matrix), self.current_heuristic])
 
             return
@@ -123,13 +122,13 @@ class MainWindow(QMainWindow):
             self.update_undo_redo_btn()
 
             jump_list = last_jump_to_list(jump)
-            rng = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+            rng = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
             wait_animation = 0  # Used to create delay when pc move after promotion
             # timer = QTimer()
             self.animation_timer_list = []
             self.animation_shrink_list = []
 
-            eated_list = []
+            eaten_list = []
             for i, one_jump in enumerate(jump_list):
                 jump_from = one_jump[0]
                 jump_to = one_jump[1]
@@ -137,30 +136,30 @@ class MainWindow(QMainWindow):
 
                 self.animation_timer_list.append(QTimer())
                 self.animation_timer_list[-1].setSingleShot(True)
-                self.animation_timer_list[-1].setInterval(500*i+wait_animation)
-                self.animation_timer_list[-1].timeout.connect(lambda: mov_piece.animate_move(jump_list[rng[0]][1][0], jump_list[rng.pop(0)][1][1]))
+                self.animation_timer_list[-1].setInterval(500 * i + wait_animation)
+                self.animation_timer_list[-1].timeout.connect(
+                    lambda: mov_piece.animate_move(jump_list[rng[0]][1][0], jump_list[rng.pop(0)][1][1]))
                 self.animation_timer_list[-1].start()
 
                 if abs(jump_from[0] - jump_to[0]) == 2:
-                    ate_x = int((jump_from[0] + jump_to[0])/2)
-                    ate_y = int((jump_from[1] + jump_to[1])/2)
+                    ate_x = int((jump_from[0] + jump_to[0]) / 2)
+                    ate_y = int((jump_from[1] + jump_to[1]) / 2)
 
-                    eated_list.append([ate_x, ate_y])
+                    eaten_list.append([ate_x, ate_y])
 
                     self.animation_shrink_list.append(QTimer())
                     self.animation_shrink_list[-1].setSingleShot(True)
-                    self.animation_shrink_list[-1].setInterval(500*i+wait_animation+250)
+                    self.animation_shrink_list[-1].setInterval(500 * i + wait_animation + 250)
                     self.animation_shrink_list[-1].timeout.connect(
-                        lambda: self.shrink_piece(eated_list[0][0], eated_list.pop(0)[1]))
+                        lambda: self.shrink_piece(eaten_list[0][0], eaten_list.pop(0)[1]))
                     self.animation_shrink_list[-1].start()
 
                 if jump_to[0] == 7:
                     wait_animation = 200
 
-
             self.animation_timer_list.append(QTimer())
             self.animation_timer_list[-1].setSingleShot(True)
-            self.animation_timer_list[-1].setInterval(500*i+500+wait_animation)
+            self.animation_timer_list[-1].setInterval(500 * i + 500 + wait_animation)
             self.animation_timer_list[-1].timeout.connect(self.replace_matrix)
             self.animation_timer_list[-1].timeout.connect(lambda: self.animation_timer_list.clear())
             self.animation_timer_list[-1].start()
@@ -168,7 +167,7 @@ class MainWindow(QMainWindow):
             self.update_heuristic_bar(self.current_heuristic)
             # End of if jump
 
-    def shrink_piece(self,i,j):
+    def shrink_piece(self, i, j):
         if self.pieces_matrix[i][j]:
             self.pieces_matrix[i][j].shrink_animation()
 
@@ -184,8 +183,8 @@ class MainWindow(QMainWindow):
         else:
             mx = matrix
         self.remove_pieces(no_edit)
-        self.pieces = []    # Delete pieces?
-        self.pieces_matrix = [[0]*8,[0]*8,[0]*8,[0]*8,[0]*8,[0]*8,[0]*8,[0]*8]
+        self.pieces = []  # Delete pieces?
+        self.pieces_matrix = [[0] * 8, [0] * 8, [0] * 8, [0] * 8, [0] * 8, [0] * 8, [0] * 8, [0] * 8]
         for i in range(8):
             for j in range(8):
                 piece_type = mx[i][j]
@@ -201,7 +200,7 @@ class MainWindow(QMainWindow):
                         no_edit.close()
 
                 if piece_type != 0 and piece_type != 3 and piece_type != 6:
-                    pc = Piece(self.centerWidget, piece_type, i, j)
+                    pc = Piece(self.center_widget, piece_type, i, j)
                     pc.raise_()
                     pc.show()
                     self.pieces.append(pc)
@@ -235,7 +234,7 @@ class MainWindow(QMainWindow):
 
             if mark.row == i and mark.col == j:
                 # x1,y1 = self.mark_source[0], self.mark_source[1]
-                x2,y2 = mark.row, mark.col
+                x2, y2 = mark.row, mark.col
 
                 if self.pieces_matrix[x1][y1]:
                     self.pieces_matrix[x1][y1].animate_pl_move(x2, y2)
@@ -264,7 +263,7 @@ class MainWindow(QMainWindow):
 
     def create_marks(self, positions):
         for pos in positions:
-            mark = Mark(self.centerWidget, pos[0], pos[1])
+            mark = Mark(self.center_widget, pos[0], pos[1])
             mark.raise_()
             mark.show()
             mark.update_size(self.size().width(), self.size().height())
@@ -309,7 +308,7 @@ class MainWindow(QMainWindow):
 
         self.remove_pieces()
         self.pieces.clear()
-        self.pieces_matrix = [[0]*8]*8
+        self.pieces_matrix = [[0] * 8] * 8
         self.available_moves.clear()
         self.current_matrix.clear()
         self.current_heuristic = None
@@ -350,16 +349,16 @@ class MainWindow(QMainWindow):
 
     def update_undo_redo_btn(self):
         if self.history_table:
-            self.sideWidget.btn_undo.setDisabled(False)
+            self.side_widget.btn_undo.setDisabled(False)
         else:
-            self.sideWidget.btn_undo.setDisabled(True)
+            self.side_widget.btn_undo.setDisabled(True)
         if self.history_redo:
-            self.sideWidget.btn_redo.setDisabled(False)
+            self.side_widget.btn_redo.setDisabled(False)
         else:
-            self.sideWidget.btn_redo.setDisabled(True)
+            self.side_widget.btn_redo.setDisabled(True)
 
     def update_heuristic_bar(self, value):
-        bar = self.sideWidget.progress_bar
+        bar = self.side_widget.progress_bar
 
         if value == 900:
             value = 100
@@ -387,4 +386,3 @@ class MainWindow(QMainWindow):
                     print(str(j.piece_type) + " ", end="")
             print()
         print("----------")
-

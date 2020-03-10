@@ -124,7 +124,8 @@ class Stack:
 
 
 class Board(object):
-    def __init__(self, new_matrix=None, last_jmp=None, game_param=None, pc_signal=None, player_signal=None, finish_signal=None):
+    def __init__(self, new_matrix=None, last_jmp=None, game_param=None, pc_signal=None, player_signal=None,
+                 finish_signal=None):
         if not new_matrix:
             self.matrix = [[0, 2, 0, 2, 0, 2, 0, 2],
                            [2, 0, 2, 0, 2, 0, 2, 0],
@@ -143,7 +144,6 @@ class Board(object):
             #                [0, 0, 0, 0, 0, 0, 0, 0],
             #                [0, 0, 0, 0, 0, 0, 0, 0],
             #                [1, 0, 0, 0, 0, 0, 0, 0]]
-
 
             # self.matrix = [[0, 2, 0, 2, 0, 2, 0, 2],
             #                [2, 0, 2, 0, 2, 0, 2, 0],
@@ -354,7 +354,7 @@ class Board(object):
         # self.lastjump += str(chr(old[0] + 65)) + str(old[1] + 1) + " --> " + str(chr(new[0] + 65)) + str(
         #     new[1] + 1) + "\n"
         if first_layer_depth:
-            self.lastjump.append(old[0] * 1000 + old[1]*100 + new[0] * 10 + new[1])
+            self.lastjump.append(old[0] * 1000 + old[1] * 100 + new[0] * 10 + new[1])
 
         return 1  # Samo MOVE
 
@@ -430,8 +430,8 @@ class Board(object):
                     self.matrix[enum_i][enum_j] = 0
             print("\n  |" + "－－－|" * 8)
         # if highlighted != 5:
-            # print(self.lastjump)
-            # last_jump_to_str(self.lastjump)
+        # print(self.lastjump)
+        # last_jump_to_str(self.lastjump)
 
     def send_signal(self, explicit_move=None, new_move=True):
         if not self.signal:
@@ -446,7 +446,8 @@ class Board(object):
             else:
                 minimax_heuristic_value = accurate_calculate(self.get_matrix())
 
-            self.signal.sig.emit(copy.deepcopy(self.lastjump), copy.deepcopy(self.matrix), self.possible_moves(1), new_move, minimax_heuristic_value)
+            self.signal.sig.emit(copy.deepcopy(self.lastjump), copy.deepcopy(self.matrix), self.possible_moves(1),
+                                 new_move, minimax_heuristic_value)
 
     def play_game(self):
         global status, turn, depth
@@ -508,7 +509,7 @@ class Board(object):
                 return 1
 
     def pl_move(self, param=1, explicit=None):
-        if self.player_signal:       # If GUI exist call another function that does not require input from keyboard
+        if self.player_signal:  # If GUI exist call another function that does not require input from keyboard
             return self.pl_gui_move(explicit)
 
         # self.pc_move(None, 1)
@@ -584,7 +585,6 @@ class Board(object):
                 return self.pl_gui_move()
             # print("primio signal 2 exp")
 
-
         # print([gui_move[0], gui_move[1]])
         if self.move(gui_move[0], gui_move[1]) == 2:
             next_hop = self.eatable(1, gui_move[1][0], gui_move[1][1])
@@ -603,7 +603,6 @@ def generate(node, param, depth_ab):
 
 
 def next_hop_add(node, table, move, param, depth_ab):
-
     first_layer_depth = True if depth_ab == depth else False
     # first_layer_depth = True
 
@@ -629,8 +628,8 @@ def accurate_calculate(matrix):
     value = 0
     for enum_i, i in enumerate(matrix):
         for enum_j, j in enumerate(i):
-            horizontal = abs(enum_j - 3) if enum_j < 4 else abs(enum_j-4)
-            vertical = abs(enum_i - 3) if enum_i < 4 else abs(enum_i-4)
+            horizontal = abs(enum_j - 3) if enum_j < 4 else abs(enum_j - 4)
+            vertical = abs(enum_i - 3) if enum_i < 4 else abs(enum_i - 4)
             if j == 1: value -= 5 + 7 - enum_i + horizontal + vertical
             if j == 2: value += 5 + enum_i + horizontal + vertical
             if j == 4: value -= 14 + horizontal + vertical
@@ -638,14 +637,17 @@ def accurate_calculate(matrix):
 
     return value
 
+
 def print_moves(moves):
     for i, move in enumerate(moves):
         # print(chr(move[0]+65))
         print(str(i + 1) + ") " + str(chr(move[0] + 65)) + str(move[1] + 1), end="   |  ")
     print()
 
+
 def player_move():
     pass
+
 
 def f_jump():
     global status
@@ -717,26 +719,27 @@ turn = 0
 
 def last_jump_to_str(last_jump):
     for lj in last_jump:
-        b2 = lj%10
-        lj = int(lj/10)
-        b1= lj%10
-        lj = int(lj/10)
-        a2 = lj%10
-        lj = int(lj/10)
-        a1 = lj%10
+        b2 = lj % 10
+        lj = int(lj / 10)
+        b1 = lj % 10
+        lj = int(lj / 10)
+        a2 = lj % 10
+        lj = int(lj / 10)
+        a1 = lj % 10
 
-        print(a1,a2,b1,b2)
+        print(a1, a2, b1, b2)
+
 
 def last_jump_to_list(last_jump):
     jumps = []
     for lj in last_jump:
-        b2 = lj%10
-        lj = int(lj/10)
-        b1= lj%10
-        lj = int(lj/10)
-        a2 = lj%10
-        lj = int(lj/10)
-        a1 = lj%10
+        b2 = lj % 10
+        lj = int(lj / 10)
+        b1 = lj % 10
+        lj = int(lj / 10)
+        a2 = lj % 10
+        lj = int(lj / 10)
+        a1 = lj % 10
 
         jumps.append([[a1, a2], [b1, b2]])
     return jumps

@@ -1,11 +1,12 @@
 from PySide2.QtWidgets import QProgressBar, QSizePolicy
 from PySide2.QtCore import Qt, QPropertyAnimation
 
+
 class HeuristicBar(QProgressBar):
     def __init__(self):
         super(HeuristicBar, self).__init__()
         # centring text works, but still do no rotate it
-        self.setStyleSheet("QProgressBar { text-align: center; background:#aaa;"+
+        self.setStyleSheet("QProgressBar { text-align: center; background:#aaa;" +
                            " } QProgressBar::chunk {" +
                            "background: qlineargradient(x0:0, y0:0, x1:1, y1:0, stop:0 #222, stop:1 #333);" +
                            "border-radius: 5px;" +

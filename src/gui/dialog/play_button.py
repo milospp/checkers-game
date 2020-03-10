@@ -19,8 +19,8 @@ class PlayButton(QWidget):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def restyle(self, bg):
-        r,g,b,a = bg.red(), bg.green(), bg.blue(), bg.alpha()
-        self.setStyleSheet("background: rgb("+str(r)+","+str(g)+","+str(b)+","+str(a)+");" +
+        r, g, b, a = bg.red(), bg.green(), bg.blue(), bg.alpha()
+        self.setStyleSheet("background: rgb(" + str(r) + "," + str(g) + "," + str(b) + "," + str(a) + ");" +
                            "border-radius: 10;" +
                            "border-style: solid;" +
                            "border-width: 5px;" +
@@ -61,8 +61,8 @@ class PlayButton(QWidget):
         self.label.resize(self.width(), self.height())
 
     def animate_hover(self, enter):
-        base_color = QColor(244,84,67,100)
-        hover_color = QColor(244,84,67,255)
+        base_color = QColor(244, 84, 67, 100)
+        hover_color = QColor(244, 84, 67, 255)
 
         start_value = base_color if enter else hover_color
 

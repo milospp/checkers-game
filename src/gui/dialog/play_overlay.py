@@ -1,5 +1,4 @@
-from PySide2.QtWidgets import QWidget, QStyleOption, QStyle, QLabel, QPushButton, QGridLayout, QGraphicsOpacityEffect
-from PySide2.QtGui import QFont
+from PySide2.QtWidgets import QWidget, QLabel, QPushButton, QGridLayout
 from PySide2.QtCore import Qt, QTimer
 from src.gui.dialog.play_button import PlayButton
 
@@ -10,10 +9,10 @@ class PlayOverlay(QWidget):
         super(PlayOverlay, self).__init__(parent)
         self.status = status
         self.main_widget = parent
-        self.main_window = parent.parent()     # AspectRatioWidget >> MainWindow
+        self.main_window = parent.parent()  # AspectRatioWidget >> MainWindow
 
         self.resize(self.main_window.size().width(), self.main_window.size().height())
-        self.resize(100,100)
+        self.resize(100, 100)
 
         self.gridLayout = QGridLayout()
         self.label = QLabel(self)
@@ -38,23 +37,22 @@ class PlayOverlay(QWidget):
 
     def update_sizes(self, width, height):
         self.resize(width, height)
-        y = height/2-370
-        self.label.resize(width,500)
+        y = height / 2 - 370
+        self.label.resize(width, 500)
         self.label.move(0, y)
 
-        y = height/2
-        x = width/2
+        y = height / 2
+        x = width / 2
 
         self.btn_play.move(x - 150, y - 20)
-        # self.btn_play.update_size()
 
         self.btn_force_jump.move(x - 150, y + 60)
         self.btn_pc_first.move(x, y + 60)
-        self.btn_undo.move(x-100,  y-70)
+        self.btn_undo.move(x - 100, y - 70)
 
-        self.btn_lvl1.move(x-150,y + 120)
-        self.btn_lvl2.move(x-50,y + 120)
-        self.btn_lvl3.move(x+50,y + 120)
+        self.btn_lvl1.move(x - 150, y + 120)
+        self.btn_lvl2.move(x - 50, y + 120)
+        self.btn_lvl3.move(x + 50, y + 120)
 
         if width < 600:
             pt_size = 38
@@ -65,18 +63,6 @@ class PlayOverlay(QWidget):
         font.setPointSize(pt_size)
         font.setBold(True)
         self.label.setFont(font)
-
-
-
-    def mousePressEvent(self, event):
-        super(PlayOverlay, self).mousePressEvent(event)
-        # self.resize(self.main_widget.width(), self.main_widget.height())
-
-    # def paintEvent(self, pe):
-    #     o = QStyleOption()
-    #     o.initFrom(self)
-    #     p = QPainter(self)
-    #     self.style().drawPrimitive(QStyle.PE_Widget, o, p, self)
 
     def init_layout(self):
         self.label.setObjectName("status")
@@ -89,20 +75,20 @@ class PlayOverlay(QWidget):
         font.setBold(True)
         self.label.setFont(font)
 
-        self.btn_play.resize(300,70)
+        self.btn_play.resize(300, 70)
 
         self.btn_force_jump.setText("Force Jump")
         self.btn_force_jump.setCheckable(True)
-        self.btn_force_jump.resize(150,50)
+        self.btn_force_jump.resize(150, 50)
 
         self.btn_pc_first.setText("PC First")
         self.btn_pc_first.setCheckable(True)
-        self.btn_pc_first.resize(150,50)
+        self.btn_pc_first.resize(150, 50)
         # self.btn_play.move(100,200)
 
-        self.btn_lvl1.resize(100,50)
-        self.btn_lvl2.resize(100,50)
-        self.btn_lvl3.resize(100,50)
+        self.btn_lvl1.resize(100, 50)
+        self.btn_lvl2.resize(100, 50)
+        self.btn_lvl3.resize(100, 50)
 
         self.btn_lvl1.setCheckable(True)
         self.btn_lvl2.setCheckable(True)
@@ -116,7 +102,7 @@ class PlayOverlay(QWidget):
         self.difficulty_radio(2)
 
         self.btn_undo.setText("UNDO")
-        self.btn_undo.resize(200,40)
+        self.btn_undo.resize(200, 40)
         self.btn_undo.clicked.connect(self.undo_move)
 
         if self.status == -1:
@@ -128,7 +114,6 @@ class PlayOverlay(QWidget):
                 self.btn_undo.setVisible(True)
             else:
                 self.btn_undo.setVisible(False)
-
 
         self.btn_play.show()
 
@@ -190,9 +175,9 @@ class PlayOverlay(QWidget):
         undo = self.main_window.history_table.pop()
         matrix = undo[0]
         self.main_window.start_game(remembered[0], False, remembered[2], matrix)
-        # heuristic bar is updated 50ms so it will happend after, because this undo create new game with 'undo' starting matrix
+        # heuristic bar is updated 50ms so it will happend after, because this undo create new game with 'undo'
+        # starting matrix
         QTimer.singleShot(50, lambda: self.main_window.update_heuristic_bar(undo[1]))
-
 
     def set_remembered(self):
         remembered = self.main_window.remember_choice_config

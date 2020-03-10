@@ -1,12 +1,12 @@
-from PySide2.QtWidgets import QWidget, QStyleOption, QStyle, QFrame, QGraphicsDropShadowEffect
+from PySide2.QtWidgets import QStyleOption, QStyle, QFrame, QGraphicsDropShadowEffect
 from PySide2.QtGui import QPainter, QCursor
-from PySide2.QtCore import QPoint, QPropertyAnimation, QRect, QTimer, QThread
+from PySide2.QtCore import QPoint, QPropertyAnimation, QRect, QTimer
 
 
 class Piece(QFrame):
     def __init__(self, parent, piece_type, row, col, move=False):
         super(Piece, self).__init__(parent)
-        self.main_window = parent.parent().parent().parent()     # CenterWidget >> AspectRatioWidget >> MainWindow
+        self.main_window = parent.parent().parent().parent()  # CenterWidget >> AspectRatioWidget >> MainWindow
         # self.move(0, 0)
         # self.resize(50, 50)
         self.setStyleSheet("background: " + "red; border-radius: 50px")
@@ -36,14 +36,12 @@ class Piece(QFrame):
             self.table_width = h
         else:
             self.table_width = w - side_width
-        width = (self.table_width-20) / 8
+        width = (self.table_width - 20) / 8
         # tile_size = grid[self.col][self.row].width()
         self.move(width * self.col + 10, width * self.row + 10)
         self.resize(width, width)
-        self.border_radius = int(width/2)
+        self.border_radius = int(width / 2)
         self.paint_piece()
-        # self.setStyleSheet("background: " + "red; border-radius: " + str(int(width/2)) +"px")
-
 
     # StckOverflow
     # https://stackoverflow.com/questions/18344135/why-do-stylesheets-not-work-when-subclassing-qwidget-and-using-q-object
@@ -59,14 +57,14 @@ class Piece(QFrame):
 
         if self.styles:
             self.setStyleSheet("background: " + self.styles["background"] + ";" +
-                               "border-radius: " + str(width/2-2) + "px;" +
+                               "border-radius: " + str(width / 2 - 2) + "px;" +
                                "border-style: outset;" +
                                "border-width: " + self.styles["border-width"] + "px;" +
                                "border-color: " + self.styles["border-color"] + ";")
 
     def enterEvent(self, event):
         if self.movable:
-            self.move(self.pos().x()-10, self.pos().y()-10)
+            self.move(self.pos().x() - 10, self.pos().y() - 10)
             self.shadow.setBlurRadius(5)
             self.shadow.setXOffset(10)
             self.shadow.setYOffset(10)
@@ -81,12 +79,11 @@ class Piece(QFrame):
     def mousePressEvent(self, event):
 
         super(Piece, self).mousePressEvent(event)
-        # print("mousepressevent")
         self.main_window.remove_marks(True)
         if self.movable:
             self.main_window.create_marks(self.possible_jumps)
             self.main_window.mark_source = [self.row, self.col]
-        self.offset = event.globalPos()-self.pos()
+        self.offset = event.globalPos() - self.pos()
 
         # Cancel all animation and replace matrix
         if self.main_window.animation_timer_list:
@@ -101,7 +98,6 @@ class Piece(QFrame):
             self.main_window.animation_timer_list = []
 
     def mouseMoveEvent(self, event):
-        # print("Move event, Piece")
         super(Piece, self).mouseMoveEvent(event)
         self.raise_()
         # self.confirm_jump_stop = True
@@ -115,11 +111,10 @@ class Piece(QFrame):
         self.shadow.setYOffset(0)
         # self.offset = event.globalPos()-self.pos()
         if self.movable:
-
             self.calc_position(True)
 
     def update_position(self):
-        width = (self.table_width-20) / 8
+        width = (self.table_width - 20) / 8
         self.move(width * self.col + 10, width * self.row + 10)
 
     def calc_position(self, user=False):
@@ -127,8 +122,8 @@ class Piece(QFrame):
         cell_size = widget_size / 8
         x_center = self.pos().x() - 10 + cell_size / 2
         y_center = self.pos().y() - 10 + cell_size / 2
-        new_col = int(x_center/cell_size)
-        new_row = int(y_center/cell_size)
+        new_col = int(x_center / cell_size)
+        new_row = int(y_center / cell_size)
         if user and new_row == self.row and new_col == self.col:
             if [new_row, new_col] in self.possible_jumps:
                 if not self.confirm_jump_stop:
@@ -154,25 +149,18 @@ class Piece(QFrame):
                     if self.piece_type == 1:
                         self.piece_type = 4
                     self.paint_piece()
-                    # elif self.piece_type == 2:
-                    #     self.piece_type = 5
-                    # QTimer.singleShot(500, self.paint_piece)
-                # self.main_window.game.playerMove.sig.emit("test")
-                print("Piece pred zvanje",[old, [self.row, self.col]], user)
 
-
-                QTimer.singleShot(100, lambda: self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]]))
+                QTimer.singleShot(100,
+                                  lambda: self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]]))
 
                 if abs(new_row - old[0]) == 2:
-                    ate_x = int((new_row + old[0])/2)
-                    ate_y = int((new_col + old[1])/2)
+                    ate_x = int((new_row + old[0]) / 2)
+                    ate_y = int((new_col + old[1]) / 2)
                     self.main_window.pieces_matrix[ate_x][ate_y].shrink_animation()
                     self.main_window.pl_last_eat = [new_row, new_col]
                 else:
                     self.main_window.pl_last_eat = []
-                # self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]])  # Stop eventloop in singals.py
 
-        print("Update position")
         self.update_position()
 
     def is_position_valid(self, row, col):
@@ -210,18 +198,6 @@ class Piece(QFrame):
                            "border-color: " + border_color + ";")
         self.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
 
-        # self.setFrameStyle(QFrame.Raised)
-        # self.setLineWidth(20)
-
-        # if self.movable:
-        #     self.shadow.setBlurRadius(5)
-        #     self.shadow.setXOffset(10)
-        #     self.shadow.setYOffset(10)
-        # else:
-        #     self.shadow.setBlurRadius(0)
-        #     self.shadow.setXOffset(0)
-        #     self.shadow.setYOffset(0)
-
     def animate_move(self, i, j):
         self.raise_()
         self.animator.stop()
@@ -236,11 +212,6 @@ class Piece(QFrame):
         self.main_window.pieces_matrix[i][j] = self.main_window.pieces_matrix[self.row][self.col]
         self.main_window.pieces_matrix[self.row][self.col] = 0
 
-        # if abs(self.row - i) == 2:
-        #     QTimer.singleShot(10, lambda: self.main_window.pieces_matrix[ate_x][ate_y]())
-        #     # self.main_window.pieces_matrix[ate_x][ate_y].shrink_animation()
-        #     # self.shrink_animation
-
         self.row = i
         self.col = j
         if self.row == 7:
@@ -251,8 +222,7 @@ class Piece(QFrame):
             QTimer.singleShot(500, self.paint_piece)
 
     def animate_pl_move(self, i, j):
-        if not self.is_position_valid(i,j):
-            print("Piece, ne mnoze move")
+        if not self.is_position_valid(i, j):
             return
         self.raise_()
         self.animator.stop()
@@ -269,10 +239,10 @@ class Piece(QFrame):
         self.animator.start()
 
     def shrink_animation(self):
-        tile_width = (self.table_width-20) / 8
+        tile_width = (self.table_width - 20) / 8
         self.animator.stop()
         old_rect = QRect(self.pos().x(), self.pos().y(), self.width(), self.height())
-        rect = QRect(self.pos().x() + tile_width/2, self.pos().y() + tile_width/2, 0, 0)
+        rect = QRect(self.pos().x() + tile_width / 2, self.pos().y() + tile_width / 2, 0, 0)
         self.animator.setDuration(250)
         self.animator.setStartValue(old_rect)
         self.animator.setEndValue(rect)
@@ -280,15 +250,15 @@ class Piece(QFrame):
         self.animator.start()
 
 
-def get_piece_color(type):
-    if type == 1:           #Player a
+def get_piece_color(p_type):
+    if p_type == 1:  # Player a
         return "#222"
-    elif type == 2:         #PC a
+    elif p_type == 2:  # PC a
         return "#bbb"
-    elif type == 3:
+    elif p_type == 3:
         return "#777"
-    elif type == 4:         #Player b
+    elif p_type == 4:  # Player b
         return "#111"
-    elif type == 5:         #PC b
+    elif p_type == 5:  # PC b
         return "#ccc"
     return "red"

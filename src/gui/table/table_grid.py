@@ -1,4 +1,4 @@
-from PySide2.QtWidgets import QGridLayout, QWidget
+from PySide2.QtWidgets import QGridLayout
 from src.gui.table.tile import Tile
 
 

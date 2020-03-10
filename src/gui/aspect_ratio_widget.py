@@ -1,7 +1,7 @@
 from PySide2.QtWidgets import QBoxLayout, QSpacerItem, QWidget
 
 
-#https://stackoverflow.com/questions/30005540/keeping-the-aspect-ratio-of-a-sub-classed-qwidget-during-resize
+# https://stackoverflow.com/questions/30005540/keeping-the-aspect-ratio-of-a-sub-classed-qwidget-during-resize
 class AspectRatioWidget(QWidget):
     def __init__(self, widget, side_widget, parent):
         super().__init__(parent)
@@ -27,21 +27,16 @@ class AspectRatioWidget(QWidget):
         # self.layout().addWidget(side_widget)
         self.layout().addItem(QSpacerItem(0, 0))
 
-
-
-
     def resizeEvent(self, e):
         w = e.size().width()
         h = e.size().height()
         side_width = self.side_widget.width()
 
         if w - 100 > h:  # too wide
-            # print("WIDE")
             self.layout().setDirection(QBoxLayout.LeftToRight)
             widget_stretch = h + side_width
             outer_stretch = (w - h - side_width) / 2
         else:  # too tall
-            # print("TAl")
             self.layout().setDirection(QBoxLayout.TopToBottom)
             widget_stretch = w - side_width
             outer_stretch = (h - w + side_width) / 2

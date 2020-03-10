@@ -5,8 +5,9 @@ import time
 
 
 class GameLoop(QThread):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, force_move=None, pc_first=None, depth=5, matrix=None):
         super(GameLoop, self).__init__(parent)
+        self.game_param = [force_move, pc_first, depth, matrix]
         self.main_window = parent
         self.signalPieces = PcMoveSignal()
         self.playerMove = PlayerMoveSignal(self)
@@ -22,7 +23,7 @@ class GameLoop(QThread):
         # config_print()
         # f_jump()
 
-        tabla1 = Board(pc_signal=self.signalPieces, player_signal=self.playerMove, finish_signal=self.finishSignal)
+        tabla1 = Board(game_param = self.game_param, pc_signal=self.signalPieces, player_signal=self.playerMove, finish_signal=self.finishSignal)
         tabla1.play_game()
 
 
