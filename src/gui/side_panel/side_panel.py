@@ -15,7 +15,7 @@ class SidePanel(QWidget):
         self.layout().setContentsMargins(QMargins(0, 10, 10, 10))
         # self.layout().setSpacing(0)
 
-        self.btn_more = QPushButton("More")
+        self.btn_more = QPushButton("Menu")
         self.btn_undo = QPushButton("<---")
         self.btn_redo = QPushButton("--->")
         self.progress_bar = HeuristicBar()
@@ -39,8 +39,9 @@ class SidePanel(QWidget):
         self.btn_more.setMinimumHeight(60)
         self.btn_undo.setMinimumHeight(30)
         self.btn_redo.setMinimumHeight(30)
+        self.btn_undo.setDisabled(True)
+        self.btn_redo.setDisabled(True)
 
         self.btn_undo.clicked.connect(self.main_window.undo_move)
         self.btn_redo.clicked.connect(self.main_window.redo_move)
-
-        print(self.progress_bar.sizePolicy())
+        self.btn_more.clicked.connect(lambda: self.main_window.show_menu(-2, False))
