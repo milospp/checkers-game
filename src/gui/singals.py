@@ -2,7 +2,7 @@ from PySide2.QtCore import Signal, QObject, QEventLoop, Slot
 
 
 class PcMoveSignal(QObject):
-    sig = Signal(list, list, list, bool)
+    sig = Signal(list, list, list, bool, int)
 
 
 class PlayerMoveSignal(QObject):
