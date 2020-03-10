@@ -6,7 +6,7 @@ from PySide2.QtCore import QPoint, QPropertyAnimation, QRect, QTimer, QThread
 class Piece(QFrame):
     def __init__(self, parent, piece_type, row, col, move=False):
         super(Piece, self).__init__(parent)
-        self.main_window = parent.parent().parent()     # CenterWidget >> AspectRatioWidget >> MainWindow
+        self.main_window = parent.parent().parent().parent()     # CenterWidget >> AspectRatioWidget >> MainWindow
         # self.move(0, 0)
         # self.resize(50, 50)
         self.setStyleSheet("background: " + "red; border-radius: 50px")
@@ -30,10 +30,12 @@ class Piece(QFrame):
         self.confirm_jump_stop = False
 
     def update_size(self, w, h):
-        if w > h:
+        side_width = self.main_window.aspect_ratio_widget.side_widget.width()
+
+        if w - side_width > h:
             self.table_width = h
         else:
-            self.table_width = w
+            self.table_width = w - side_width
         width = (self.table_width-20) / 8
         # tile_size = grid[self.col][self.row].width()
         self.move(width * self.col + 10, width * self.row + 10)
@@ -159,7 +161,7 @@ class Piece(QFrame):
                 print("Piece pred zvanje",[old, [self.row, self.col]], user)
 
 
-                QTimer.singleShot(10, lambda: self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]]))
+                QTimer.singleShot(100, lambda: self.main_window.game.playerMove.stop_waiting([old, [self.row, self.col]]))
 
                 if abs(new_row - old[0]) == 2:
                     ate_x = int((new_row + old[0])/2)
@@ -271,7 +273,7 @@ class Piece(QFrame):
         self.animator.stop()
         old_rect = QRect(self.pos().x(), self.pos().y(), self.width(), self.height())
         rect = QRect(self.pos().x() + tile_width/2, self.pos().y() + tile_width/2, 0, 0)
-        self.animator.setDuration(500)
+        self.animator.setDuration(250)
         self.animator.setStartValue(old_rect)
         self.animator.setEndValue(rect)
         self.styleSheet()

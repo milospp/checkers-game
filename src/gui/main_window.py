@@ -10,6 +10,8 @@ from src.gui.dialog.play_overlay import PlayOverlay
 from src.gui.dialog.black_overlay import BlackOverlay
 from src.gui.aspect_ratio_widget import AspectRatioWidget
 from src.chekcers import last_jump_to_list
+from src.gui.side_panel.side_panel import SidePanel
+from copy import deepcopy
 import time
 
 
@@ -23,6 +25,8 @@ class MainWindow(QMainWindow):
         self.centerWidget = QWidget(self)
         self.center_layout = TableGrid(self)
 
+        self.sideWidget = SidePanel(self)
+
         self.pieces = []
         self.pieces_matrix = [[0]*8]*8
         self.grid = self.center_layout.table
@@ -35,12 +39,15 @@ class MainWindow(QMainWindow):
         self.mark_source = []
         self.marks = []
         self.pl_last_eat = []
+        self.history_table = []
+        self.history_redo = []
 
         self.overlayBG = None
         self.overlay = None
 
-        self.aspect_ratio_widget = AspectRatioWidget(self.centerWidget, None)
+        self.aspect_ratio_widget = AspectRatioWidget(self.centerWidget, self.sideWidget, None)
 
+        self.setStyleSheet("background:#333;")
         self.draw_table()
         self.windows_adjustment()
         self.show_menu(-1)
@@ -60,9 +67,11 @@ class MainWindow(QMainWindow):
 
     def resizeEvent(self, event):
         for i in self.pieces:
+            # i.update_size(self.centerWidget.width(), self.centerWidget.height())
             i.update_size(event.size().width(), event.size().height())
 
         for i in self.marks:
+            # i.update_size(self.centerWidget.width(), self.centerWidget.height())
             i.update_size(event.size().width(), event.size().height())
 
         if self.overlay:
@@ -76,11 +85,13 @@ class MainWindow(QMainWindow):
     # Player_move control should move be animated
     def pc_piece_move(self, jump, matrix, all_moves, moved=True):
         self.available_moves = all_moves
+        old_matrix = self.current_matrix
         self.current_matrix = matrix
         self.update_movable_tag()
 
         # Player jumped, pieces is moved by gui, no need to repalce anything
         if not moved and jump:
+            print("NOT MOVED AND JUMP")
             return
 
         if not moved:
@@ -90,6 +101,8 @@ class MainWindow(QMainWindow):
 
         if jump:
             self.pl_last_eat = []
+            self.history_redo.clear()
+            self.history_table.append(deepcopy(old_matrix))
 
             jump_list = last_jump_to_list(jump)
             rng = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
@@ -121,7 +134,7 @@ class MainWindow(QMainWindow):
                     self.animation_shrink_list[-1].setSingleShot(True)
                     self.animation_shrink_list[-1].setInterval(500*i+wait_animation+250)
                     self.animation_shrink_list[-1].timeout.connect(
-                        lambda: self.shrink_piece(eated_list[0][0],eated_list.pop(0)[1]))
+                        lambda: self.shrink_piece(eated_list[0][0], eated_list.pop(0)[1]))
                     self.animation_shrink_list[-1].start()
 
                     # QTimer.singleShot(500*i+wait_animation+250, lambda: self.shrink_piece(eated_list[0][0],eated_list.pop(0)[1]))
@@ -244,6 +257,7 @@ class MainWindow(QMainWindow):
             mark.raise_()
             mark.show()
             mark.update_size(self.size().width(), self.size().height())
+            # mark.update_size(self.centerWidget.width(), self.centerWidget.height())
             self.marks.append(mark)
 
     def show_menu(self, status, check_animation=True):
@@ -295,6 +309,28 @@ class MainWindow(QMainWindow):
         self.game = GameLoop(self)
 
         self.init_game_thread()
+
+    def undo_move(self):
+        print("undo", self.history_table)
+        print("redo", self.history_redo)
+        if self.history_table:
+            self.history_redo.append(deepcopy(self.current_matrix))
+            # self.current_matrix = self.history_table.pop()
+            # self.replace_matrix(self.current_matrix)
+            # self.game.playerMove.stop_waiting([-1, self.current_matrix])
+            self.game.playerMove.stop_waiting([-1, self.history_table.pop()])
+
+    def redo_move(self):
+        print("undo", self.history_table)
+        print("redo", self.history_redo)
+
+        if self.history_redo:
+            self.history_table.append(deepcopy(self.current_matrix))
+            # self.current_matrix = self.history_redo.pop()
+            # self.replace_matrix(self.current_matrix)
+            # self.game.playerMove.stop_waiting([-1, self.current_matrix])
+            self.game.playerMove.stop_waiting([-1, self.history_redo.pop()])
+
 
     def print_matrix(self):
         for i in self.pieces_matrix:

@@ -11,6 +11,7 @@ def main_gui():
     main_app = QApplication(sys.argv)
     QThread.currentThread().setPriority(QThread.HighPriority)
 
+    main_app.setStyle('fusion')
     main_app.main_window = MainWindow()
     main_app.main_window.show()
     #main_app.setStyle('fusion')

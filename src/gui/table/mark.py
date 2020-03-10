@@ -7,7 +7,7 @@ class Mark(QWidget):
 
     def __init__(self, parent, row, col):
         super(Mark, self).__init__(parent)
-        self.main_window = parent.parent().parent()     # CenterWidget >> AspectRatioWidget >> MainWindow
+        self.main_window = parent.parent().parent().parent()     # CenterWidget >> AspectRatioWidget >> MainWindow
 
         self.table_width = 50
         self.row = row
@@ -28,10 +28,12 @@ class Mark(QWidget):
         self.style().drawPrimitive(QStyle.PE_Widget, o, p, self)
 
     def update_size(self, w, h):
-        if w > h:
+        side_width = self.main_window.aspect_ratio_widget.side_widget.width()
+
+        if w - side_width > h:
             self.table_width = h
         else:
-            self.table_width = w
+            self.table_width = w - side_width
         cell_width = (self.table_width-20) / 8
         width = cell_width / 4
         self.setStyleSheet("border-radius: " + str(width/2-1) + "px; background: white; opacity:0.5;")

@@ -135,6 +135,17 @@ class Board(object):
                            [0, 1, 0, 1, 0, 1, 0, 1],
                            [1, 0, 1, 0, 1, 0, 1, 0]]
 
+
+            self.matrix = [[2, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 1, 0, 1, 2, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 1, 0, 0, 0, 1],
+                           [2, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0],
+                           [1, 0, 1, 0, 0, 0, 0, 0]]
+
+
             # self.matrix = [[0, 2, 0, 2, 0, 2, 0, 2],
             #                [2, 0, 2, 0, 2, 0, 2, 0],
             #                [0, 2, 0, 2, 0, 2, 0, 2],
@@ -532,11 +543,21 @@ class Board(object):
             return None
         if not explicit:
             gui_move = self.player_signal.wait_for_move()
+            if gui_move[0] == -1:
+                self.matrix = copy.deepcopy(gui_move[1])
+                self.send_signal(new_move=False)
+
+                return self.pl_gui_move()
             # print("primio signal 1")
 
         else:
             self.send_signal(explicit, new_move=False)
             gui_move = self.player_signal.wait_for_move()
+            if gui_move[0] == -1:
+                self.matrix = copy.deepcopy(gui_move[1])
+                self.send_signal(new_move=False)
+
+                return self.pl_gui_move()
             # print("primio signal 2 exp")
 
 
