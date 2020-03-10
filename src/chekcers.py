@@ -124,7 +124,7 @@ class Stack:
 
 
 class Board(object):
-    def __init__(self, new_matrix=None, last_jmp=None, pc_signal=None, player_signal=None, finish_signal=None):
+    def __init__(self, new_matrix=None, last_jmp=None, game_param=None, pc_signal=None, player_signal=None, finish_signal=None):
         if not new_matrix:
             self.matrix = [[0, 2, 0, 2, 0, 2, 0, 2],
                            [2, 0, 2, 0, 2, 0, 2, 0],
@@ -135,15 +135,14 @@ class Board(object):
                            [0, 1, 0, 1, 0, 1, 0, 1],
                            [1, 0, 1, 0, 1, 0, 1, 0]]
 
-
-            self.matrix = [[2, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 1, 0, 1, 2, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 1, 0, 0, 0, 1],
-                           [2, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0],
-                           [1, 0, 1, 0, 0, 0, 0, 0]]
+            # self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [5, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [0, 0, 0, 0, 0, 0, 0, 0],
+            #                [1, 0, 0, 0, 0, 0, 0, 0]]
 
 
             # self.matrix = [[0, 2, 0, 2, 0, 2, 0, 2],
@@ -164,6 +163,7 @@ class Board(object):
             #                [0, 1, 0, 1, 0, 0, 0, 0],
             #                [0, 0, 0, 0, 0, 0, 0, 0]]
             #
+
             # self.matrix = [[0, 0, 0, 0, 0, 0, 0, 0],
             #                [0, 0, 2, 0, 0, 0, 0, 0],
             #                [0, 0, 0, 0, 0, 0, 0, 0],
@@ -188,6 +188,18 @@ class Board(object):
             self.lastjump = last_jmp
         else:
             self.lastjump = []
+
+        if game_param:
+            global depth, force_jump, pc_first, variable_depth
+            force_jump = game_param[0]
+            pc_first = game_param[1]
+            depth = game_param[2]
+            if depth != 5:
+                variable_depth = False
+            if game_param[3]:
+                self.matrix = copy.deepcopy(game_param[3])
+
+        self.minimax_heuristic = None
         self.signal = pc_signal
         self.player_signal = player_signal
         self.finish_signal = finish_signal
@@ -199,6 +211,8 @@ class Board(object):
         value = 0
         for enum_i, i in enumerate(self.matrix):
             for enum_j, j in enumerate(i):
+                if j == 0:
+                    continue
                 if j == 1: value -= 5 + 7 - enum_i + abs(enum_j - 4) + abs(enum_i - 4)
                 if j == 2: value += 5 + enum_i + abs(enum_j - 4) + abs(enum_i - 4)
                 if j == 4: value -= 14 + abs(enum_j - 4) + abs(enum_i - 4)
@@ -347,7 +361,7 @@ class Board(object):
     def pc_move(self, stack):
         root = Node(0, self)
         time1 = time.time()
-        minimax(root, depth, Node(-1000), Node(1000), True)
+        self.minimax_heuristic = minimax(root, depth, Node(-1000), Node(1000), True)
         think = time.time() - time1
         print("Thinking (sec):", think)
         stack.push(think)
@@ -424,9 +438,15 @@ class Board(object):
             return None
         if explicit_move:
             # 4th arg is for updating position of table pieces
-            self.signal.sig.emit(self.lastjump, self.matrix, explicit_move, new_move)
+            self.signal.sig.emit(self.lastjump, self.matrix, explicit_move, new_move, None)
         else:
-            self.signal.sig.emit(copy.deepcopy(self.lastjump), copy.deepcopy(self.matrix), self.possible_moves(1), new_move)
+
+            if self.minimax_heuristic:
+                minimax_heuristic_value = accurate_calculate(self.minimax_heuristic.board.get_matrix())
+            else:
+                minimax_heuristic_value = accurate_calculate(self.get_matrix())
+
+            self.signal.sig.emit(copy.deepcopy(self.lastjump), copy.deepcopy(self.matrix), self.possible_moves(1), new_move, minimax_heuristic_value)
 
     def play_game(self):
         global status, turn, depth
@@ -439,11 +459,11 @@ class Board(object):
             rand_move = random.choice(pc_moves)
             self.move(rand_move[0], rand_move[1], 2)
         while True:
-            if stack.three_sum() > 11 or stack.peek() > 4.5:
+            if variable_depth and (stack.three_sum() > 11 or stack.peek() > 4.5):
                 depth -= 1
                 stack.set([4, 4, 4])
                 print("Smanjena dubina  na", depth)
-            elif stack.three_sum() < 2:
+            elif variable_depth and (stack.three_sum() < 2):
                 depth += 1
                 stack.set([4, 4, 4])
                 print("Povećana dubina  na", depth)
@@ -544,6 +564,8 @@ class Board(object):
         if not explicit:
             gui_move = self.player_signal.wait_for_move()
             if gui_move[0] == -1:
+                if not gui_move[1]:
+                    return None
                 self.matrix = copy.deepcopy(gui_move[1])
                 self.send_signal(new_move=False)
 
@@ -554,6 +576,8 @@ class Board(object):
             self.send_signal(explicit, new_move=False)
             gui_move = self.player_signal.wait_for_move()
             if gui_move[0] == -1:
+                if not gui_move[1]:
+                    return None
                 self.matrix = copy.deepcopy(gui_move[1])
                 self.send_signal(new_move=False)
 
@@ -600,6 +624,19 @@ def next_hop_add(node, table, move, param, depth_ab):
     node.add_child(Node(None, new_table))
     return
 
+
+def accurate_calculate(matrix):
+    value = 0
+    for enum_i, i in enumerate(matrix):
+        for enum_j, j in enumerate(i):
+            horizontal = abs(enum_j - 3) if enum_j < 4 else abs(enum_j-4)
+            vertical = abs(enum_i - 3) if enum_i < 4 else abs(enum_i-4)
+            if j == 1: value -= 5 + 7 - enum_i + horizontal + vertical
+            if j == 2: value += 5 + enum_i + horizontal + vertical
+            if j == 4: value -= 14 + horizontal + vertical
+            if j == 5: value += 14 + horizontal + vertical
+
+    return value
 
 def print_moves(moves):
     for i, move in enumerate(moves):
@@ -674,6 +711,7 @@ force_jump = False
 pc_first = False
 status = "NOVA IGRA"
 depth = 5
+variable_depth = True
 turn = 0
 
 
