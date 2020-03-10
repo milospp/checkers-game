@@ -1,7 +1,7 @@
 # Checkers Game
 Checkers (Draughts) is a board game that you can play vs Computer or another Player (TODO)
 
-# AI Logic
+# Algorithm Logic
 Computer moves are calculated with a min-max algorithm with depth about 5, in that case, computer play moves that are best for every scenario in next 5 moves
 
 # Info
