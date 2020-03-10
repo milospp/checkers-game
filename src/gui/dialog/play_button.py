@@ -6,6 +6,7 @@ from PySide2.QtGui import QPainter, QColor, QPalette
 class PlayButton(QWidget):
     def __init__(self, parent):
         super(PlayButton, self).__init__(parent)
+        self.parent = parent
         self.main_window = parent.main_window
 
         self.setStyleSheet("background: rgb(244,84,67,100);" +
@@ -26,7 +27,8 @@ class PlayButton(QWidget):
                            "border-color: #232;")
 
     def mousePressEvent(self, event):
-        self.main_window.start_game()
+        self.main_window.start_game(self.parent.is_force_move(), self.parent.is_pc_move(), self.parent.get_difficulty())
+        self.parent.save_remembered()
 
     def enterEvent(self, event):
         super(PlayButton, self).enterEvent(event)
