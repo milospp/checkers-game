@@ -1,6 +1,6 @@
 from PySide2.QtWidgets import QWidget, QStyleOption, QStyle, QSizePolicy, QVBoxLayout, QPushButton
 from PySide2.QtGui import QPainter
-from PySide2.QtCore import QMargins
+from PySide2.QtCore import QMargins, Qt
 from src.gui.side_panel.heuristic_bar import HeuristicBar
 
 
@@ -41,6 +41,9 @@ class SidePanel(QWidget):
         self.btn_redo.setMinimumHeight(30)
         self.btn_undo.setDisabled(True)
         self.btn_redo.setDisabled(True)
+        self.btn_more.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_undo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_redo.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.btn_undo.clicked.connect(self.main_window.undo_move)
         self.btn_redo.clicked.connect(self.main_window.redo_move)

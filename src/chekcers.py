@@ -441,8 +441,13 @@ class Board(object):
             self.signal.sig.emit(self.lastjump, self.matrix, explicit_move, new_move, None)
         else:
 
-            if self.minimax_heuristic:
-                minimax_heuristic_value = accurate_calculate(self.minimax_heuristic.board.get_matrix())
+            if self.minimax_heuristic is not None:
+                if self.minimax_heuristic.value > 400:
+                    minimax_heuristic_value = 900
+                elif self.minimax_heuristic.value < -400:
+                    minimax_heuristic_value = -900
+                else:
+                    minimax_heuristic_value = accurate_calculate(self.minimax_heuristic.board.get_matrix())
             else:
                 minimax_heuristic_value = accurate_calculate(self.get_matrix())
 

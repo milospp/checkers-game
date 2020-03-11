@@ -1,5 +1,6 @@
 from PySide2.QtWidgets import QWidget, QStyleOption, QStyle
 from PySide2.QtGui import QPainter
+from PySide2.QtCore import Qt
 
 
 class Tile(QWidget):
@@ -21,3 +22,9 @@ class Tile(QWidget):
         o.initFrom(self)
         p = QPainter(self)
         self.style().drawPrimitive(QStyle.PE_Widget, o, p, self)
+
+    def set_cursor_pointing(self, clickable):
+        if clickable:
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+        else:
+            self.setCursor(Qt.CursorShape.ArrowCursor)

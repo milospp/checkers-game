@@ -79,10 +79,12 @@ class PlayOverlay(QWidget):
 
         self.btn_force_jump.setText("Force Jump")
         self.btn_force_jump.setCheckable(True)
+        self.btn_force_jump.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_force_jump.resize(150, 50)
 
         self.btn_pc_first.setText("PC First")
         self.btn_pc_first.setCheckable(True)
+        self.btn_pc_first.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_pc_first.resize(150, 50)
         # self.btn_play.move(100,200)
 
@@ -96,12 +98,16 @@ class PlayOverlay(QWidget):
         self.btn_lvl1.setText("EASY")
         self.btn_lvl2.setText("MEDIUM")
         self.btn_lvl3.setText("HARD")
+        self.btn_lvl1.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_lvl2.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_lvl3.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_lvl1.clicked.connect(lambda: self.difficulty_radio(1))
         self.btn_lvl2.clicked.connect(lambda: self.difficulty_radio(2))
         self.btn_lvl3.clicked.connect(lambda: self.difficulty_radio(3))
         self.difficulty_radio(2)
 
         self.btn_undo.setText("UNDO")
+        self.btn_undo.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_undo.resize(200, 40)
         self.btn_undo.clicked.connect(self.undo_move)
 

@@ -1,6 +1,6 @@
 from PySide2.QtWidgets import QStyleOption, QStyle, QFrame, QGraphicsDropShadowEffect
 from PySide2.QtGui import QPainter, QCursor
-from PySide2.QtCore import QPoint, QPropertyAnimation, QRect, QTimer
+from PySide2.QtCore import QPoint, QPropertyAnimation, QRect, QTimer, Qt
 
 
 class Piece(QFrame):
@@ -81,6 +81,7 @@ class Piece(QFrame):
         super(Piece, self).mousePressEvent(event)
         self.main_window.remove_marks(True)
         if self.movable:
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
             self.main_window.create_marks(self.possible_jumps)
             self.main_window.mark_source = [self.row, self.col]
         self.offset = event.globalPos() - self.pos()
@@ -111,6 +112,7 @@ class Piece(QFrame):
         self.shadow.setYOffset(0)
         # self.offset = event.globalPos()-self.pos()
         if self.movable:
+            self.setCursor(Qt.CursorShape.OpenHandCursor)
             self.calc_position(True)
 
     def update_position(self):
@@ -130,6 +132,7 @@ class Piece(QFrame):
                     self.confirm_jump_stop = True
                     return
             else:
+                self.update_position()
                 return
         self.confirm_jump_stop = False
 
@@ -138,6 +141,7 @@ class Piece(QFrame):
                 self.main_window.remove_marks(True)
 
                 self.movable = False
+                self.set_cursor_pointing(False)
                 self.main_window.pieces_matrix[self.row][self.col] = 0
                 self.main_window.pieces_matrix[new_row][new_col] = self
                 old = [self.row, self.col]
@@ -236,6 +240,9 @@ class Piece(QFrame):
         self.animator.setEndValue(rect)
         self.animator.finished.connect(self.calc_position)
 
+        self.movable = False
+        self.set_cursor_pointing(False)
+
         self.animator.start()
 
     def shrink_animation(self):
@@ -249,6 +256,12 @@ class Piece(QFrame):
         self.styleSheet()
         self.animator.start()
 
+    def set_cursor_pointing(self, clickable):
+        if clickable:
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.setCursor(Qt.CursorShape.OpenHandCursor)
+        else:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
 
 def get_piece_color(p_type):
     if p_type == 1:  # Player a

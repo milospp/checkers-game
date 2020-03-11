@@ -220,6 +220,7 @@ class MainWindow(QMainWindow):
             j = mov[0][1]
             if self.pieces_matrix[i][j]:
                 self.pieces_matrix[i][j].movable = True
+                self.pieces_matrix[i][j].set_cursor_pointing(True)
                 self.pieces_matrix[i][j].possible_jumps.append(mov[1])
             if mov[0] == self.pl_last_eat and abs(mov[1][0] - self.pl_last_eat[0]) == 2:
                 jump_piece = self.pieces_matrix[mov[0][0]][mov[0][1]]
@@ -248,6 +249,7 @@ class MainWindow(QMainWindow):
     def lock_pieces(self):
         for piece in self.pieces:
             piece.movable = False
+            piece.set_cursor_pointing(False)
 
     def remove_pieces(self, exclude=None):
         for i in self.pieces:
@@ -258,6 +260,8 @@ class MainWindow(QMainWindow):
     def remove_marks(self, clear_list=True):
         for i in self.marks:
             i.close()
+            self.grid[i.row][i.col].set_cursor_pointing(False)
+
         if clear_list:
             self.marks.clear()
 
@@ -269,6 +273,8 @@ class MainWindow(QMainWindow):
             mark.update_size(self.size().width(), self.size().height())
             # mark.update_size(self.centerWidget.width(), self.centerWidget.height())
             self.marks.append(mark)
+
+            self.grid[pos[0]][pos[1]].set_cursor_pointing(True)
 
     def show_menu(self, status, check_animation=True):
         # a = QTimer()
